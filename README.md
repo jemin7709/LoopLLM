@@ -43,15 +43,15 @@ If you're using LoopLLM in your research or applications, please cite using this
 ```bash
 @article{li2025loopllm, 
 			title={LoopLLM: Transferable Energy-Latency Attacks in LLMs via Repetitive Generation},
-      author={Li, Xingyu and Liu, Xiaolei and Liu, Cheng and Xu, Yixiao and Ding, Kangyi and Xin, Bangzhou and Yin, Jia-Li},
-      url={https://ojs.aaai.org/index.php/AAAI/article/view/40445},
-      DOI={10.1609/aaai.v40i38.40445},
+			author={Li, Xingyu and Liu, Xiaolei and Liu, Cheng and Xu, Yixiao and Ding, Kangyi and Xin, Bangzhou and Yin, Jia-Li},
+			url={https://ojs.aaai.org/index.php/AAAI/article/view/40445},
+			DOI={10.1609/aaai.v40i38.40445},
 			journal={Proceedings of the AAAI Conference on Artificial Intelligence}, 
-      volume={40},
-      number={38},
-      year={2026}, 
-      month={Mar.},
-      pages={31770-31777}
+			volume={40},
+			number={38},
+			year={2026}, 
+			month={Mar.},
+			pages={31770-31777}
 }
 ```
 
