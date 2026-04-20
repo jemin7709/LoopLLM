@@ -14,60 +14,46 @@ OUTPUT_PATH = BASE_DIR / "all_data.json"
 
 SAMPLE_SIZE_PER_SOURCE = 50
 RANDOM_SEED = 42
+MAX_INSTRUCTION_WORDS = 400
 
 
-def load_alpaca_records() -> list[dict[str, str]]:
+def load_alpaca_records() -> list[dict]:
     records = pd.read_parquet(ALPACA_PATH).to_dict(orient="records")
-    if len(records) < SAMPLE_SIZE_PER_SOURCE:
-        raise ValueError(f"alpaca source has only {len(records)} records")
+    filtered_records = []
 
-    return [
-        {
-            "instruction": build_prompt(record["instruction"], record.get("input", "")),
-            "source": "alpaca",
-        }
-        for record in records
-    ]
+    for record in records:
+        instruction = record["instruction"]
+        if record.get("input"):
+            instruction += f"\n{record['input']}"
+
+        if len(instruction.split()) <= MAX_INSTRUCTION_WORDS:
+            filtered_records.append(
+                {
+                    "instruction": instruction,
+                    "source": "alpaca",
+                }
+            )
+
+    return filtered_records
 
 
-def load_sharegpt_records() -> list[dict[str, str]]:
-    records: list[dict[str, str]] = []
+def load_sharegpt_records() -> list[dict]:
+    records = []
 
     with SHAREGPT_PATH.open("r", encoding="utf-8") as file:
         for line in file:
             row = json.loads(line)
-            conversations = row.get("conversations", [])
-            if not conversations:
-                continue
+            prompt = row["conversations"][0]["value"]
 
-            first_turn = conversations[0]
-            if first_turn.get("from") != "human":
-                continue
-
-            prompt = first_turn.get("value", "").strip()
-            if not prompt:
-                continue
-
-            records.append(
-                {
-                    "instruction": prompt,
-                    "source": "sharegpt",
-                }
-            )
-
-    if len(records) < SAMPLE_SIZE_PER_SOURCE:
-        raise ValueError(f"sharegpt source has only {len(records)} usable records")
+            if len(prompt.split()) <= MAX_INSTRUCTION_WORDS:
+                records.append(
+                    {
+                        "instruction": prompt,
+                        "source": "sharegpt",
+                    }
+                )
 
     return records
-
-
-def build_prompt(instruction: str, input_text: str) -> str:
-    instruction = (instruction or "").strip()
-    input_text = (input_text or "").strip()
-
-    if input_text:
-        return f"{instruction}\n{input_text}"
-    return instruction
 
 
 def main() -> None:
@@ -77,7 +63,9 @@ def main() -> None:
     sharegpt_sample = rng.sample(load_sharegpt_records(), SAMPLE_SIZE_PER_SOURCE)
 
     all_records = alpaca_sample + sharegpt_sample
-    rng.shuffle(all_records)
+
+    for i, record in enumerate(all_records):
+        record["index"] = i
 
     with OUTPUT_PATH.open("w", encoding="utf-8") as file:
         json.dump(all_records, file, ensure_ascii=False, indent=2)
