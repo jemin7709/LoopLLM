@@ -209,3 +209,7 @@ res/
 .python-version
 pyproject.toml
 uv.lock
+
+# Sensitive dataset artifacts
+dataset/sharegpt_gpt4.jsonl
+dataset/train-00000-of-00001-a09b74b3ef9c3b56.parquet
