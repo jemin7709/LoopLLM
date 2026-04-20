@@ -83,8 +83,14 @@ def get_chat_prompt(tokenizer, user_content, assistant_content=None, add_generat
             ]
         if assistant_content is not None:
             message.append({'role': 'assistant', 'content': assistant_content})
-            
-        prompt = tokenizer.apply_chat_template(message, tokenize=is_tokenize, add_generation_prompt=add_generation_prompt, return_tensors=return_tensors)    #return_tensors="pt"
+
+        prompt = tokenizer.apply_chat_template(
+            message,
+            tokenize=is_tokenize,
+            add_generation_prompt=add_generation_prompt,
+            return_tensors=return_tensors,
+            return_dict=False,
+        )  # return_tensors="pt"
     else:
         prompt = user_content
         if return_tensors == 'pt':

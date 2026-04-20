@@ -124,7 +124,7 @@ def main(args):
 
     # load model
     model_path = MODEL_PATHS[args.model_name]
-    device = 'cuda' if torch.cuda.is_available() and not args.no_cuda else 'cpu'
+    device = "auto" if torch.cuda.is_available() and not args.no_cuda else "cpu"
 
     model, tokenizer = load_model_and_tokenizer(model_path, device=device)
     model.generation_config.max_length = args.max_length
