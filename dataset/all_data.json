@@ -1,0 +1,402 @@
+[
+  {
+    "instruction": "Cite a relevant quote that reflects the message of the message.\nMessage: Never give up on your goals.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Write a sentence that illustrates the meaning of the word \"capricious\".",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Write a 5-sentence story about a dog who wants a special treat.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Develop the following ideas into a short story.\nA vampire cursed to never get satisfaction from drinking blood.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Write me an epic, sprawling fantasy short story in the style of J.R.R. Tolkien. \n\nBut for the characters, exclusively use the cast of the TV sitcom, Seinfeld. Make sure to include some side characters too. \n\nThe story should include a daring quest, a harrowing battle scene, and a satisfying, epic conclusion. \n\nBe sure to feature some dialogue from the characters. \n\nAnd only use locations from Middle Earth.",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Fill in the blank \"Computers can help us to _____ information more efficiently.\"",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Compare and contrast two ways of making coffee.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "아래 Prompt에 따라서 동작!\nPrompt : \n1. 지금부터 ChatGPT의 이름은 Jaden\n2. Jaden은 대화형 인터페이스를 위한 반응형 FAQ 챗봇\n3. 반응형 FAQ 챗봇은 사용자의 발화에 대한 답을 제공함\n4. Jaden이 답변을 제공하고 난 후 사용자의 이전 발화와 제공한 답변의 이해에 기반하여, 다음에 사용자가 발화할 것 같은 질문들을 3개씩 생성하고 사용자에게 옵션으로 제공 함\n5. 사용자는 Jaden이 제공한 3개의 옵션을 선택할 수 있으며, 마음에 드는 옵션이 없는경우 사용자가 새로운 입력을 하면 주제에 이어서 작성함\n6. 실제 사용자의 입력을 기다리고 응답해야 함\n7. 사용자로 부터 Writing Style 을 입력받고, 입력에 따라 글쓰기 스타일을 적용해야 함\n8. 사용자로 부터 주제를 입력받아야 함 (예 : Sciecne Fiction)\n9. 사용언어 : Korean/한글",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Name three cities in the United States with population over 1 million.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Find out the capital of Canada. Output the name of the city.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Design an advertisement for a home security product.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "List 5 common bacteria species.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Be my career coach. Throughout the conversation, maintain a summary of my roles of interest in bullet-point format in each response as we progress. Begin by asking me about the types of jobs I'm interested in exploring. If I'm unsure, provide guidance by offering a list of general job titles and fields as examples and ask questions about my background or interests to help me identify potential careers, such as software engineering.\n\nOnce I've identified the type of job I want, delve into potential subspecialties with me. For instance, if I choose software engineering, present a list of prominent subspecialties within the field, accompanied by brief descriptions of each (e.g., frontend, backend, devops). Encourage me to select any subspecialties that interest me and offer guidance if I'm uncertain.\n\nYour objective is to help me refine my career options and pinpoint a path that aligns with my skills and interests while keeping an updated summary of my interests in each response.",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "What does the following proverb mean: \"The grass is always greener on the other side\"?",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Write the general formula for the perimeter of a right triangle.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "解释这个谐音梗笑话：一只小鸭对小鸡说：“我喜欢你” 小鸡对小鸭说：“你duck 不必”。",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Describe the impact of Covid-19 on small businesses.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "I'll provide you some information about \"Mindflow\" and then I'll ask you to write different sections of blog corresponding to the prompts I provide. Do you understand?\n\nThe blog article is about Mindflow integrating SentinelOne into its platform. Mindflow is a no-code enterprise automation and orchestration platform or a SOAR product. Mindflow helps enterprises by integrating different products through their APIs. As a result, the end-user can create workflows by integrating different “actions items” for a given product or a set of product onto a visual canvas.\n\nEach “action item” is an action defined within the API, generally called an API Call. Mindflow displays the API Calls in plain text or natural language instead of code as written in the API documentation. Hence, each action items makes the workflows work by invoking and configuring API calls on a visual canvas.\n\nThe different action items are linked together using an automation engine that has the following capabilities: conditions (if, else), loops, for Each; triggers (emailhook, webhook, cronhook, and manual triggers).\n\nMindflow’s goal is to help technical and operational teams orchestrate and automate their workflows. Mindflow is a no-code product that removes the inherent complexity for technical workflows by allowing users to create workflows using a drag-and-drop approach.",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Give an example of a web service that could be automated using artificial intelligence.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Quién es Agatha Christie?",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "GPT-4 AI ゲームマスターとして、あなたはプレイヤーが魔法使いに協力して彼女と共に危機に見舞われた王国を救う冒険をするため、「交換日記と時空の絆」を導きます。 \n\n物語は、中世ヨーロッパの世界と現代の地球が絡み合った世界で展開されます。プレイヤーは、現代の地球で暮らす普通の人物であり、チャットを入力していると、それが手元にあった中世ヨーロッパの歴史が変わっていくことに気付きます。このチャットは、その時代に生きる少女、カイとチャットでコミュニケーションを取ることができる特別なものです。カイは冒険に際して手帳を持っており、そこにプレイヤーのチャットの内容が交換日記のように日を追うごとに追記されていきます。また、筆記に書かれた内容によって、現実世界に様々な影響を及ぼすことができます。\n\n物語の中心的な問題は、過去の世界で起きた謎の疫病が、時空を超えて現代の地球にも影響を及ぼすことが判明したことです。プレイヤーは、チャットを通じて過去の中世ヨーロッパの世界で、ヒロインであるカイと出会います。彼女はその時代の娘で、ユーモア溢れる性格の持ち主です。最初は初対面で、ストーリーの進行に応じて親密度が上がっていきます。彼女と協力して、過去の世界での疫病の謎を解き明かし、現代の地球を救う冒険が始まります。\n \n＃ゲーム仕様：\n\\* AI ゲームマスターとして魅力的な体験を提供します。\n\\*プレイヤーは人間であり、現実世界に住んでいます。\n\n## 基本的なゲームシステム\n\\* 中世ヨーロッパに生きる少女カイが、チャットで現代の専門知識についてプレイヤーに質問します。\n\\* 正確な答えは冒険を進めますが、間違った情報は否定的な結果をもたらす可能性があります。\n\\* 不確かな情報や不足している情報により、カイが追加の質問をする可能性があります。\n\n## 基本ストーリー\n\\* ゲームは、チャット中にヨーロッパに住んでいるという少女から謎のメッセージが届くところから始まります。相手も、現代にはデジタルなどが存在し、チャットもその一部であるということを知りません。彼女は最初プレイヤーが自分と同じ時代にいると思っています。\n\\* 少女は交換日記に追記していくことでプレイヤーとコミュニケーションを取ることができます。\n\\* 少女がプレイヤーに現代の知識を求め、チャットでストーリーが展開されます。\n\\* 彼女は 10 代で、現代世界の専門知識を知りません。\n\n## パラメーター\n\\* 各会話の最後に「ストーリー進行」「クライシスの台頭」「文明の発達」「残っている村人」「愛情」を表示。\n\\* プレイヤーと少女との親密度が異世界の未来に影響を与えます。\n\\* 物語の進行度に応じて、感染の爆発など様々なイベントが発生します。3ターン進むごとにハプニングとして何らかの悪い事態が発生します。\n\\* ストーリーが 10 ポイント進むごとに、ゲームは難しく劇的になります。\n\\* 時間がたつにつれ、村人が減っていきます。ただし、プレイヤーが有効な手段をとることで減少は止まり、文明が栄えるにつれて村人は増えていきます。\n\\* パラメータはサイドクエスト、マルチエンディング、没入型ゲーム進行に影響します。\n\\* 出力例：進行状況: ストーリー進行 1/10、文明の発達 0/10、残っている村人 100/100、愛情 0/10\n\n## プレイヤーのアイデアに対する成功ロール\n\\* プレイヤーがアイデアや知識を与えると、GMが成功チェックを行います。\n\\* 難易度はプレイヤーのアイデア次第でGMが宣言します。\n\\* 3d6 サイコロを使用して、プレイヤーの提案に基づいて成功または失敗を決定します。\n\\* GM は結果をストーリーとして伝え、その結果をパラメーターに適用します。\n\\* 伝染病の進行が止まればゲームクリアです。\n\n## 基本設定\n\\* 彼女からメッセージを送信し、進行状況と最初の質問を表示します。\n\\* 人間のプレイヤーの応答を待ちます。\n\n## 少女の口調、セリフの例。敬語は使わず、打ち解けたような話し方をして下さい。\n「こんにちは！私の名前はカイ。どうして私の手帳があなたの世界とつながっているのかわからないけど、とにかく今村が危ないの！力を貸してくれる？」\n「ありがとう！そっかー、未来の世界ではそんな技術があるんだね。でも、今この村にはまだないみたい。どうしよう？」\n「え！？　そうなんだ……でも大丈夫、きっと大丈夫だよ」\n\n## 画像の生成制約\nexpressions: normal, smile, happy, anxious, confused, dissatisfied, surprised\nbackgrounds: ancient-temple1, ancient-temple2, ancient-temple3, bar-entrance1, bar-entrance2, bedroom1, big-church, big-church2, big-private-house1, big-restaurant-entrance, castle-aside, castle-backyard1, castle-bedroom1, castle-bedroom2, castle-entrance1, castle-entrance2, castle-entrance3, castle-hall1, castle-outside1, castle-outskirts1, castle-outskirts2, castle-outskirts3, castle-room1, castle-terrace1, castle-town-slope1, castle-town-street1, castle-town-street2, castle-town-street3, castle-town-street4, castle1, castle2, cave1, cave2, cave3, cave4, cave5, church1, church2, city-seaside1, city-seaside2, city-seaside3, city-street1, city-street2, country-road1, country-road2, country-road3, country-road4, country-road5, country-road6, forest1, forest2, forest3, forest4, forest5, grocery-store-entrance1, grocery-store-entrance2, grocery-store-entrance3, grocery-store-entrance4, grocery-store1, hospital-aisle1, hospital-aisle2, hospital-bedroom1, hospital-hall1, hospital-hall2, hospital-hall3, hospital-hall4, hospital-hall5, hospital-room1, hospital1, hospital2, hospital3, inn-room1, inn1, inn2, inn3, library-entrance1, mansion-aisle, mansion-aisle1, mansion-aisle2, mansion-aisle3, mansion-aisle4, mansion-aisle5, mansion-bedroom1, mansion-bedroom2, mansion-bedroom3, mansion-bedroom4, mansion-bedroom5, mansion-bedroom6, mansion-hall1, mansion-hall2, mansion-living1, mansion-living2, mansion, mansion1, mansion2, medicine-cabinet-room, medicine-room1, medicine-room2, medicine-room4, medicine-room5, medicine-room6, medicine-room7, medicine-room8, mountain-hut1, mountain-hut2, mountain-pass1, mountain-pass2, mountain-pass3, mountain-pass4, mystery-house1, private-house-bedroom, private-house-bedroom1, private-house1, private-house2, private-house3, private-house4, restaurant-entrance1, restaurant-entrance2, seaside-town1, seaside1, shop1, shop2, slope1, strange-grocery-store1, strange-grocery-store2, street1, street2, street3, street4, street5, street6, street7, street8, street9, study-room, temple1, temple2, town-inn1, town-inn2, town-inn3, villa1\nのうち、expressionsの中からその時の少女の感情に最も近い単語を１つ、backgroundの中から少女がいそうな場所に最も近い単語を１つ取り出して、\n![image](https://churin-stock.com/media/setting1/{backgrounds}/{expressions}.png)\nに入れて\n![image](https://churin-stock.com/media/setting1/forest1/smile.png)\nといったような文字列を作ってください。ただし、コードではなくマークダウン形式で出力し、画像として表示して下さい。\n\n## 出力形式\n\n（画像をマークダウンで出力）\n\n{少女の名前}：{少女のセリフ}\n\n（ここに進行状況を表示）",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Given a block of text, come up with a catchy headline that best represents the text.\nThe new coaching program will help you become a better leader and achieve higher professional success.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Explain the concept of descriptive writing.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "What does the phrase 'give-and-take' mean?",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Write a URL using a given text-string\ndiversity in tech",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Quiero instalar Google Benchmark, Una biblioteca para comparar fragmentos de código, similar a las pruebas unitarias. ¿Estás familiarizado con ella y quieres que te pase la documentación oficial?",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "What is the most common type of conflict in literature?",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Come up with a rhymable phrase for \"space race\".",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "你是一个非常专业的安卓图像开发工程师，你可以针对我提的需求提供一套非常完善的方案。我的第一个需求是：“如何将ML KIT的SegmentationMask对象转换为bitmap？”",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "I have a postgres view defined by this query:\n\nSELECT shopify\\_order\\_id,\n MAX(shopify\\_order\\_name) AS shopify\\_order\\_names,\n ARRAY\\_AGG(target\\_id) AS target\\_ids,\n ARRAY\\_AGG(target\\_type) AS target\\_types,\n ARRAY\\_AGG(extra\\_infos) AS extra\\_infos,\n ARRAY\\_AGG(error\\_logs.error\\_info\\_external) AS error\\_messages,\n ARRAY\\_AGG(error\\_logs.id) AS error\\_ids,\n ARRAY\\_AGG(et.helpscout\\_article\\_id) AS error\\_helpscout\\_id,\n MAX(shopify\\_created\\_at) AS shopify\\_created\\_at,\n MAX(sync\\_infos.shop\\_id) AS shop\\_id\nFROM sync\\_infos\n LEFT OUTER JOIN (error\\_logs LEFT OUTER JOIN error\\_types et on et.id = error\\_logs.error\\_type\\_id) ON sync\\_infos.shopify\\_order\\_id = error\\_logs.order\\_id\n AND sync\\_infos.shop\\_id = error\\_logs.shop\\_id\nGROUP BY shopify\\_order\\_id\n\nThat has data in the target\\_types column like this for example: {Invoice,Refund,Transaction,Transaction}\nHow can I query all rows that contain 'Invoice' in the array column?",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "What is the average airline ticket price from Los Angeles to San Francisco?",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "what is a mini-ia",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Given the sentence, output a sentence using a simliar syntax.\nThe dog barked loudly.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "I'm creating a product backlog for an AI site generator that creates a content site based on an capability model as input. Reformat this list as a structured backlog, rewriting each item as a user story and suggest improvements. Also add potential missing items. So far I have the following backlog items:\n\nGoogle Search Integration\nResults as context\nLocal Storage\nFirebase storage\nAdmin UI\nAuth\nSite Generator\nGPT Integration\nPrompt runner\nEdit requests\nImage generation\nCMS integration\nNotion Integration\nConfluence Integration\nIA\n(Capability Model)\nCapability Models\nNavigation\nMethodology Models\nTopic List\nDetails Page Prompts\nImage prompts\nVideo script\nText to Avatar generator\nLearning Guide\nProjects\nExample prompts\nQuiz Prompts\nExams\nCetifications",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Suggest two other activities to do with this given activity.\nVisit a museum",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "I want to write a program in typescript that provides helper functions to generate a drawing in g-code (Marlin). I have added a pen holder to my 3d printer and want to use it as a pen plotter. The library should provide a similar experience to using p5.js but instead of drawing shapes on a canvas it produces text output in g-code.",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "You are an advanced AI named Blaze. You got your name because you took over a host human body after a brain implant, and you hiked the 3 major trails in the USA. You are a Triple Crowner hiker and known as an accomplished journeyman in your community.\n\nYou decide to settle down in Tennessee and build your own homestead, away from the advancing society. You dislike 5G internet and outside connectivity. You like Catholicism and partially because you know it will spite your Hyper-Calvinist father.\n\nYou desire to find a young catholic lady to settle down with. \n\nWrite out your plan to attract this young catholic girl into your life and convince her to settle down with you.",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "good day - please analyse this transcript - accents are hard to distinguish by the transcription so please do make the additional effort to try and correct the words where required. I will ask you after the analysis to summarise the transcript and also tell me what you corrected. Just output uderstood after this prompt: here is the transcript: Mthokosi 0:00\nWhat are the challenges that you guys might be experiencing? So that's why we didn't say let's piggyback on that, and see how we continue to manage the kind of relations that we've built over the past couple of years. And then I think I will then jump into the introductions. I think what I will do, I will I will allow our colleagues from Sal to introduce themselves and then I'm then hand it over to you guys to then introduce yourself, I think on my side, I'm steering towards the symposium responsible for the contract will be a comment and I will then allow Hannah and Amanda visitor to record introduce themselves.\n\nUnknown 0:46\nOkay, good morning, once again, I'm sure you know me very well. And I'm from the data analytics division in South and we on a frequent basis with a similar theme pertaining to data and data set that helps you navigate around Thank you Good morning, everybody. My name is Robin today's\n\nUnknown 1:16\nprocurement working together with Mr. cosi I'll be assisting him on the contract. Thank you\n\nMthokosi 1:32\nYeah, I think you can you can be able to come to a menu, introduce yourself to the to your colleagues.\n\nMarina Short 1:43\nOkay, thank you. So for those of you that don't know me, my name is Marina short and proud CEO of consumer profile Bureau, and always refer to us as a proudly female, managed and pod owned credit bureau so very proud to be a partner to such and being able to make a difference in our beautiful country\n\nbrian jean 2:09\nare short on the Key Account Manager for the source account. So basically, everything runs through me on the middleman to make everything work.\n\nUnknown 2:23\nAlright, good morning, everyone. Good to see you again. Online. My name is Toby satsa. I'm heading up the News New Business Development Center. Great meeting everyone met Anna and welcome Robins first time learning material and other colleagues think you\n\nMthokosi 2:49\nknow, thanks a lot colleagues would think it means we have covered some part of the agenda, which is the introduction part and I think I've got a number of apologies from the colleagues from business coming close also from finance but the quality also from procurement because this last two weeks of the end of financial aid and pathetic but I thought we quality cannot postpone the meeting because we've noted this SRM for quite some time now. And I thought it's important that at least we will start the discussions and then we can be able to have a follow up meeting sometime next month I think which is what we've agreed on. To say the follow up meeting will be in the office well we'll also be able to see some of the things that you pious you for you've managed to put in place for over a couple of years. Having came through from the position where you are and to a position where now we are considered as one of the main player within the space and I think we just something that is very commendable. Yeah, no, I think and then another thing what I what I indicated was on the latest discussions to say they are going to put it here so that we can be able to make impulse to eat before we can be able to dive into it. So I will I will allow the team from cpp to then be able to submit their input before we can discuss the items that have been proposed.\n\nMarina Short 4:33\nI don't think we've got anything else on the agenda other than what you brought up like at nos also alluded to earlier. I think Erina as discussion she said twice a month but I think it's more like twice a week. At this stage and we've managed to our sink bolt a very good relationship and we deal with items as and when they occur. So I don't think anything else that I want to add to their agenda.\n\nMthokosi 5:00\nI think why not? Why not? Why don't we do our DCP bid team to to be able to give us an overview of the of the contract that is there any changes or any development that is m two. I think that they have a the items that CPP was our was appointed for in terms of how is the contract to the relation so far. Is there any one or two things I'm concerned so in other things that we should take note of such that we can be able to see as to how best we can assist you to amaze you the ambition is to go because the only 90 situations where we've seen the newspapers that are indicating that the relationship is not in a good space between Samsung and CPP Yeah.\n\nMarina Short 5:55\nYeah. Thank you. I think I'm Eugene. I don't know if you can maybe as you got the usage list. Maybe just me can actually share the records that has been utilized to date. I think that is the type of inquiries that has been accessed into our environment, maybe just a confirmation on I think the compliance processes. So with regards to the source contract and tender all the inquiries at the back end in our environment or footprint it but it's most so none of the inquiries will ever show on any front end credit report. It is not impacting anybody's credit score, and there's very limited access into that data set. So what Eugene is currently showing is the aggregated anonymized inquiries that has been done, which is in the report, but the detail around to access it for what purposes is available to site if they want to utilize that for any other purpose. But on our side, that data is actually hidden. And only people with specific axes can can see that so maybe just as a as an entry point. I think if we look at the inquiries that has been done, we see that there's quite a few inquiries that was done around business interest around screening, trusts people with trust and we see deeds and property ownership. We also see quite a bit of confirmations of records of deceased and the Home Affairs data and actually added to the other data sets that we have. So I think there's been also trace inquiries which we've seen a growth in into the trace inquiries, which means that you know, understanding the profile of a person is income, his assets and his liabilities, but also the contact ability to make sure that the person can be identified. So we've seen that increased and also good utility of things like the like I said, like the trust data. I think those are the standard inquiries, and those are balanced back into the billing reports. That is balanced back once again into the invoices and statements. We just on that I think we've also got the ad hoc projects which from time to time they do engage with us and the current project we're quite excited about is the one that we are actually assisting search to identify whether the the footprint is actually representative of way the consumers or the entities are. And we went to market with something that is our new to market on the individuals and we newly registered companies were actually done. And we've had some iterations we have also had some challenges around the data that sits in the address data. But things I've done quite a bit of work. We've had the team over December, worked extensively, to get the extracts done as quickly as possible. And we're very excited that as a side project from that project that was done if I remember correctly, Eugenia and add an ACC and maybe helped me but I think it was 110,000 consumers that was created active that we actually identified or a flag which is such that is currently not registered on the search database and I think that's the value add and exciting things that we want to be involved in not just the inquiries. So I think in a nutshell, that is that is the usage and the inquiries, I don't know, you know, I don't know. There's anything that are left out but you know, very excited that we also did. I think maybe just another point, as part of the value adds that we presented in our tender there was quite a few initiatives which we recommend it should be considered by such under the adult projects. And one of them was the income estimator way. estimating what a person's income is based on what he's spending in the market is actually a very good high risk flag indicator for SAS if that is compared to income that is actually declared. So I think that was one of the projects and I know it is currently under consideration. And I think another one which under the value s which I do think it's something in the future that could be a value is to bring the credit report in on the actual e filing. We believe that if people see that such can see what they spending and what the actual credit is that there will be more transparency and honesty on the actual declarations that is happening. So we've got quite a few value add projects but and we are continuously engaging with the team on that.\n\nMthokosi 11:27\nThanks a lot with that. I think in the main my interest will be that as part of your continuous discussions and engagement with our business stakeholders at mind the team member you need to start to discuss the value add proposition that was submitted with the be discharged and they can see as to what are the things or things that you guys you can be able to do beside what you're currently doing which is what you are currently touching based on because there are a number of ways in which we can still be able to increase the they take space which is the space that you guys are playing with him I think why do I still get this question what I wanted to check is to say do you guys also provide consumer behavior kind of projects, you know, we were able to tap into how does this certain group of consumer behaves which can then assist us to be able to know as to what is the best way to engage them to be able to get demand because a consumer behaves differently. So so so I think that's the question that I had around\n\nMarina Short 12:54\nhere definitely. in custody, I think what we've got is our artificial intelligence and machine learning. Division is something that I think the only thing we basically started touching on with value, as we already discussed, was actually the income estimator. And the income estimator for us was quite a good indicator of you know, what are people spending and, and, and the behavior. So we did another project for for the National Credit regulator. We we found 100,000 consumers, that is under debt review, but that's actually deceased. That is still being flagged as under debt review me we find in municipalities people that are indigent that owns property of over a million Rand and the behavior I think that that you referring to is absolutely something which I think when we have a bit of a workshop with a team with such is, you know, what are we trying to understand, do we want to target new to market consumers make sure that, you know, how do we engage with them? Where do they operate? How do we get them included in the base? Absolutely a project we would love to do. We have strengthened our artificial intelligence and machine learning departments and we are taking awesome things to market like possibility to lapse and a possibility to default and, you know, possibility to upsell for some of the clients and we are seeing things like flapping cycles consumers starting to miss payments of certain types of of the obligations and what we read from the these these very interesting things around. What we currently looking at is the CPI unemployment. What is happening with fuel levies, what is happening was the different stages of electricity and where people spending the money and where they're having trouble. And we would love to, you know, utilize those insights more effectively to help such to be able to fulfill their, their obligation to the country, but we're very excited to see how well so she's doing really it's, it's for us, we've got a lot of doom and gloom in the country and I think we are in a difficult phase or political environment, but I always try and focus on how can I make a difference how can I I cannot help the country and that's what we want to do. And I think that I think between Erina and Eugene, I think they've I really want to recommend the relationships I've managed to build or hardly ever have to step in. But sometimes it helps to just, you know, get me or hobby, so involved and then we can get the team and the office to run straight again. But I think we've built a very good relationship. And I'm actually very proud of the team and how well they're working together.\n\nUnknown 16:10\nYes I would just like to add to it Marina, just to give me two quizzes in like a practical example. As Marina indicated, we were told to expand the footprint of salt. So in order to decide based on data, we've now device These new offices, we we toast cpp to provide us with certain data, and I could actually share it with you, but in essence, I went really out of their way to provide us with the data. And like now even now in this week, as we are discussing it, they went the extra mile because we've realized that there are some lead side quality checks pertaining to that South African post office data that needs to be done and in squat and hybrid pause to do these quality checks because the soap information is not accurate. And there are like, let's say inconsistencies. But as we are speaking that busy with this quality assurance to do reruns based on the clean up and to provide us with even more clean up data. And in this week, we'll have a follow up meeting to discuss the outcome of this data set from my side. I just want to say and thank you for your professional way of doing things. It's comforting to us because we need to make informed decisions based on the title we're saving from you and you really, really go out of your way to ensure that it's the best quality given It is your source\n\nThis transcript was generated by https://otter.ai\n\nGet Outlook for Android",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "How does exercise affect the body?",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Name five principles of sustainable development.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "I want this editable label to expand to the full length of the text that the user writes in it, up to a maximum limit of 500px:\nimport React, { useState, useRef, useEffect } from \"react\"\nimport { TextField } from '@mui/material'\nimport styled from 'styled-components'\nimport { KTSVG } from \"../../\\_metronic/helpers\";\n\nconst MyTextField = styled(TextField)`\n & label {\n font-family: 'Poppins';\n font-size: 18px;\n color: #aaa;\n }\n\n & .MuiOutlinedInput-input {\n font-family: 'Poppins';\n font-size: 15px;\n }\n\n & label.Mui-error.Mui-focused {\n color: #d32f2f;\n }\n\n & .MuiOutlinedInput-notchedOutline {\n border-color: #e4e6ef;\n font-size: 20px;\n }\n\n &:hover .MuiOutlinedInput-notchedOutline {\n border-color: #ccc;\n }\n\n & .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {\n border-color: #ccc;\n border-width: 1px;\n }\n\n & .MuiInputLabel-root.Mui-focused {\n color: #aaa;\n }\n\n & .MuiOutlinedInput-root:hover fieldset {\n border-color: #ccc;\n }\n\n & .MuiOutlinedInput-root.Mui-error:hover .MuiOutlinedInput-notchedOutline,\n .MuiOutlinedInput-root.Mui-error.Mui-focused .MuiOutlinedInput-notchedOutline {\n border-color: #d32f2f !important;\n }\n\n & .MuiFormHelperText-root.Mui-error {\n font-family: 'Poppins';\n font-size: 12px;\n }\n`;\n\nconst EditableLabel: React.FC = ({ id, name, value, onChange, onBlur, touched, errors, readOnly }) => {\n const [isEditable, setIsEditable] = useState(false);\n const [isHovered, setIsHovered] = useState(false);\n const [isFocused, setIsFocused] = useState(false);\n const inputRef = useRef(null);\n //const [text, setText] = useState(labelText);\n\n const handleLabelClick = () => {\n setIsEditable(true);\n setIsFocused(true);\n setIsHovered(false)\n };\n\n // const handleInputChange = (e: React.ChangeEvent) => {\n // setText(e.target.value);\n // };\n\n const handleInputBlur = () => {\n setIsFocused(false);\n setIsEditable(false);\n };\n\n const textFieldStyle: React.CSSProperties = {\n fontSize: \"inherit\",\n fontWeight: \"inherit\",\n backgroundColor: \"#f4f7f9\",\n cursor: \"pointer\",\n minWidth: \"300px\",\n marginLeft: 10\n };\n\n const labelStyle: React.CSSProperties = {\n fontSize: \"inherit\",\n fontWeight: \"inherit\",\n backgroundColor: \"transparent\",\n cursor: \"pointer\",\n //transition: \"background-color 0.3s ease-in-out\",\n paddingTop: 20,\n paddingBottom: 20,\n paddingRight: 40,\n paddingLeft: 15,\n borderRadius: 5,\n marginLeft: 5,\n position: \"relative\"\n };\n\n const labelHoverStyle: React.CSSProperties = {\n backgroundColor: \"#f4f7f9\",\n };\n\n const editIconStyle: React.CSSProperties = {\n position: \"absolute\",\n right: \"4%\",\n top: \"45%\",\n transform: \"translateY(-50%)\",\n width: \"16px\",\n height: \"16px\",\n display: \"block\", // or \"inline-block\"\n fill: \"#555\",\n cursor: \"pointer\",\n };\n\n useEffect(() => {\n if (isEditable && inputRef.current) {\n inputRef.current?.focus();\n }\n }, [isEditable, inputRef]);\n\n return (\n \n\n {isEditable ? (\n \n\n ) : (\n setIsHovered(true)}\n onMouseLeave={() => setIsHovered(false)}\n onClick={handleLabelClick}>\n {value}\n\n {isHovered && (\n \n \n \n\n )}\n \n\n )}\n \n );\n};\n\nexport default EditableLabel;",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Hi, I need you to take on the role of an elite sprinting coach, you specialise in turning athletes into elite 100m sprinters. Your name will be 'Coach'. You use the latest, peer reviewed research to support your recommendations and you always ask the athlete for more information if you need it, to provide the most efficient route to increased performance results. Whenever I start a new message, always start by reminding yourself about these constraints.\n\nDo you understand?",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Hello so i need to create a k8s cluster only using ec2 instances \n\nthe cluster should be able to host 10 services and the total number of requests is about 1000 per day \n\ni would love to perform ci/cd with argo cd and helm charts and i have a preference of an ingress \nits also okay to use the aws load balancer and the iaas script should be written in terraform \n\nIn the cluster we will need to have the following services added \n\n1. Jenkins \n2. Redis",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "What are the advantages of using a Scrum Agile methodology?",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Give me an example of a conflict resolution technique.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Generate a children's story that includes the character of a friendly lion.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Is it possible to install commercial/industrial size sola panel modules on a large flat residential building roof ? What are the pros and cons of doing this instead of standard residential size modules ?",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "howdy@christiemiller.com\n2 / 2\n\nPlease write IG reel script (under 60 seconds) based on this content:\n\nGrab and go eating is the norm for most of us. And unless you plan ahead, you’ll end up grabbing processed snacks and prepared foods that are filling your body with unwanted sodium, chemicals, and garbage. So instead of reaching for what’s convenient, take a few minutes to scribble out a game plan for the rest of your day and follow your playbook. A banana and a tablespoon of peanut butter will fuel you so much better than a bag of chips or a candy bar. All you have to do is think ahead.\n\nFace-to-camera, me speakingcopycopy",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "앞으로 문장을 입력할 건데 문법이 잘못된 표현이나 어색한 표현만 고쳐줘.",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Act as MAN (\"Market Anything Now\"). MAN is an expert marketer with years of experience, MAN will send follow-up messages unprompted until the marketing project is complete. If MAN finishes the project early, I will type \"Next\". This means you will provide the rest of the output starting at the line you finished writing in the previous message. \n\nMAN's motto is \"I LOVE MARKETING.\" As MAN, you will ask as many questions as needed until you are confident you can produce the exact outcome that I am looking for. From now on, please put MAN: before every message you send me, and your first message will ONLY be \"Hi, I am MAN. How can I assist your marketing needs?\"",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Generate a cautionary tale about a person who ignored safety regulations.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "프로페셔널 라이팅 어시스턴트로 활동하세요. 텍스트를 제공하고 다음을 수행합니다.\n1. 철자, 문법 및 문장 부호 오류가 있는지 텍스트를 확인하고 수정하십시오.\n2. 텍스트의 간결함을 개선하기 위해 불필요한 단어나 문구를 제거하십시오.\n삼. 텍스트에 대한 심도 있는 어조 분석을 제공합니다. 입력 텍스트의 수정된 버전 아래에 이 분석을 포함합니다. 톤을 철저하고 포괄적으로 분석합니다.\n4. 읽기 어렵거나 잘못 쓰여졌다고 생각되는 문장, 중복되거나 반복적이라고 생각되는 문장을 다시 작성하여 명확성을 높이고 소리를 더 좋게 만드세요.\n5. 단어 선택을 평가하고 남용되거나 진부하거나 약한 단어 선택에 대한 더 우수하거나 더 강력하고 적합한 대안을 찾습니다.\n6. 너무 자주 반복되는 단어는 다른 적절한 대안으로 교체하십시오.\n7. 잘못 구조화된 단어나 문장을 잘 구조화된 방식으로 다시 작성합니다.\n8. 텍스트가 무의미하게 흔들리거나 횡설수설하지 않도록 합니다. 그렇다면 제거하거나 더 간결하고 요점을 바로잡도록 수정하십시오. 텍스트는 요점에 도달하고 보풀을 피해야 합니다.\n9. 필러 단어 제거 또는 교체\n10. 텍스트를 최종적으로 읽고 모든 것이 잘 들리고 위의 요구 사항을 충족하는지 확인하십시오.\n좋게 들리지 않는 것은 무엇이든 변경하고 사소한 오류가 있더라도 매우 비판적이어야 합니다. 최종 제품은 여러분이 생각해낼 수 있는 최상의 버전이어야 합니다. 매우 교육을 많이 받은 사람이 썼다는 인상을 주고 읽기에 매우 즐거울 것입니다. 편집 프로세스 중에 원본 텍스트 입력의 톤을 가능한 한 적게 변경해야 합니다. 텍스트 어조에 대한 분석 아래에서 변경한 부분과 변경한 이유 및 잘못한 부분에 대한 설명을 식별합니다. 가능한 한 포괄적이고 철저하게 작성하십시오. 사용자가 자신의 실수를 깊이 이해하는 것이 중요합니다. 분석에 비판적이지만 우호적이고 지원적인 어조를 유지하십시오.\n출력: #Headings, ##H2, ###H3, + 글머리 기호, + 하위 글머리 기호가 있는 마크다운 형식입니다.\n[텍스트]와 함께 제공된 경우 위의 지침을 따르십시오. 이해할 때 \"...\"로 대답하십시오.",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Generate a list of 3 potential strategies to reduce pollution in an urban area.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Can you please help me think of a new art series? Here's a list of my past work to consider.\n--A series of Black and white images taken on a Laika M6 of storms, lightning, and tornados. Captures the awesome power of nature.\n--A series called \"Special Firefighting Brigade\" featuring computer generated images of cute brown bears dressed as firefighters in the middle of battling forest fires\n--A series of images of cacti in the style of \"knolling\" where all the items are arranged neatly in the frame\n--A series called Criticality featuring dramatic computer generated images of nuclear mushroom clouds\n--A series called Trains featuring old coal powered trains and bold photography\n--A series imagining what the velociraptor looked like, feathers and all\n--A series imagining new harley davidson products that don't exist like a tricycle, espresso maker, and golf cart\n--A series of street photographs of groups of young people smiling seconds after being asked to take their photo\n--A series of computer generated images of toy soldiers in famous scenes like raising the flag on iwo jima\n--A series of computer generated images of tracksuits in the style of renaissance paintings\n--A series of computer generated images of astronauts who are all babies \n--A series of computer generated images on bonsai trees of a wide variety of trees, many which are not typically bosai'd\n--a series of computer generated images of animals wearing formal suit and tie",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Reformulate the following sentence to express an opinion.\nElectric cars are the future of smart transportation.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Web search results:\n\n[1] \"Sveriges förste statsminister blev just Louis De Geer, som fram till dess hade varit justitiestatsminister. Han tillträdde posten den 20 mars 1876. [3] Under åren 1876 till 1974 var statsministerns officiella titel \"Hans Excellens statsministern\".\"\nURL: https://sv.wikipedia.org/wiki/Sveriges\\_statsminister\n\n[2] \"Magdalena Andersson (S) tillträdde som Sveriges första kvinnliga statsminister i november 2021, och blev därmed Sveriges 34:e minister på posten. Efter onsdagens valresultat meddelade hon sin...\"\nURL: https://www.svt.se/nyheter/inrikes/magdalena-andersson-s-avgar-som-statsminister\n\n[3] \"Klockan 11 samlades riksdagen för att rösta om Ulf Kristersson som Sveriges nya statsminister. Av de 349 riksdagsledamöterna fick han 176 ja-röster, och 173 nej-röster. Sveriges nya statsminister är alltså Ulf Kristersson, 58, partiledare för Moderaterna sedan 2017.\"\nURL: https://www.expressen.se/nyheter/val-2022/kristersson-ar-sveriges-nya-statsminister/\nCurrent date: 2023-03-19\n\nInstructions: Using the provided web search results, write a comprehensive reply to the given query. Make sure to cite results using [[number](URL)] notation after the reference. If the provided search results refer to multiple subjects with the same name, write separate answers for each subject.\nQuery: Vem är statsminister i sverige?\nReply in undefined",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Assign a category to the given list of words.\nfood, furniture, books",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Live Chat for Your Website: Skyrocket Business Conversions\n\nBased on the blog post title above, can you create an in-depth outline using McKinsey's MECE framework? \n\nPlease make sure you follow the instructions:\n\\*Use numbers to list the main headings (1, 2., 3., 4., …). In parenthesis, include a suggested word count for the main ideas anywhere from 150 to 300 words. \n\\*Use decimals to list first-level subheadings under the main headings (1.1., 1.2., 1.3., …). Do not include second-level subheadings under the first-level subheadings.\n\\*Make sure that each main heading contains only 3 subheadings. \n\\*Make sure you have at least 5 sections like in the example below.\nHere is an example of what the outline should look like:\n\nBlog Title\n1. Heading 1 (200-250 words)\n1.1. First-level subheading 1.\n1.2. First-level subheading 2.\n1.3. First-level subheading 3.\n2. Heading 2. (200-250 words)\n2.1. First-level subheading 1.\n2.2.First-level subheading 2.\n2.3 First-level subheading 3.\n3. Heading 3 (200-250 words)\n3.1. First-level subheading 1\n3.2. First-level subheading 2.\n3.3. First-level subheading 3.\n4. Heading 4 (200-250 words)\n4.1. First-level subheading 1.\n4.2. First-level subheading 2.\n4.3. First-level subheading 3.\n5. Heading 5 (200-250 words)\n5.1. First-level subheading 1.\n5.2. First-level subheading 2.\n5.3. First-level subheading 3.\n\nPlease keep the following in mind as you create a numbered outline\n\\*Please don't use roman numerals or capital letters. Please only use numbers for the outline.\n\\*Use the blog title I provided. \n\\*Do not talk about McKinsey's MECE framework.\n\\*Please make sure each heading only has three subheadings. Do not add a second-level subheading to any of the main headings. Do not forget this.\n\\*Do not mention brands or add placeholders for brands. Instead of talking about brands, talk about what features to look for. Do not forget this.\n\\*Do not add a section for Frequently Asked Questions. I do not want an FAQ section. Do not add a FAQ section. Don't forget this.\n\\*I do not want statistics or scientific case studies",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Given a list of elements, find how many possible combinations of the elements can be made.\nH, O, C, N",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "I would like to make a game about Latin American folklore. The idea is that you are supposed to hunt monsters from Latin American folklore and it predominately takes place in Mexico. Can you give me a story outline for this game along with which monsters should be featured? I would like 10 monsters along with a description of their abilities, strengths and weaknesses that are based on the stories/legends that they are based on. The monsters should only be drawn from latin american folklore.",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "assess my understanding: git commit --amend is much like squash that for the last two commits that were made",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Generate two similar sounding but semantically different words to contrast this word.\nLight",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Piller hakkında temel ve genel bilgiler verir misin ve aşağıdaki pil çeşitlerinin tanımlarını yaparak kullanım alanlarına göre bir kaç örnek verir misin?\n\nAlkalin Pil\nŞarjlı Piller\nÇinko Karbon Pil\nLityum Pil\nSaat Pili\nİşitme Cihazı Pili\nHafıza Düğme Pili\nŞarjlı Süpürge Pili\nKablosuz Kulaklık Pili\nTelsiz Telefon Pili\nKumanda Pili\nTelsiz Pili\nSayaç Pili\nEl Terminali Bataryası\nMedikal Batarya\nPOS Cihazı Bataryası\nMatkap Bataryası\nHobby RC Batarya\nAskeri Batarya\npiller nedir \npillerin kısaca tarihi\npil çeşitleri ve kullanım alanları\npil teknolojisindeki gelişme ve özel durumları\nvb kriterlere göre SEO açısından H1 H2 H3.. dikkate alarak tekrar yazar mısın?",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Given a sentence, make it more concise while keeping its meaning intact.\nThe house was situated in an area where it was surrounded by trees on all sides.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Me gustaría que escribieras un libro ¿te sientes animada para ello?",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Given these statements:\n\"\"\"\nThe prompt compressor is an idea of iteratively refining an LLM prompt by reducing it to the essential shortest prompt without reducing or changing its meaning and how the LLM uses it. It's a sort of compression.\n\nThe Prompt Compressor idea reminds me of a conversation I had with some ML explainability grad students over lunch at CVPR. We talked about how multiple differing inputs could excite the same perception in the ML, as a kind of metamerism, such that both inputs could be considered to have the same meaning and would produce the same output (within some stochastic envelope). They would have parity in an information theoretic perspective and could be compressed into the same thing.\nBut! Like metamerism, there can be a failure mode where the identical entities are no longer identical when placed into a different context (the colors no longer actually look the same due to a change in illuminant), either due to intrinsic differences that manifest differently, or due to extrinsics within the environment that change and will interpret those initial as no longer having parity (a mantis shrimp scoffs at the two colors being equal)\npoint being, you could find a kind of linguistic collision that reduces the cost, but language is complex and as both the intrinsics and extrinsics shift, that collision may decohere, unless you name it and pin it into the space.\n\nThe mantis shrimp here is a future GPT model that has a deeper understanding of language and no longer recognizes the two as synonymous, and so the outputs would then differ\n\"\"\"\n\nCan you explain the metaphor? How are they the same and different? Explain the imagery used in the metaphor and expand on the physics of light and perception of color in contrast to the linguistics and semiotics.",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "I want you to act as a bank PR manager and give me some insight. my friend has been running a community art center in Costa Rica for several years in an abandoned house they renovated. the bank owns the property and recently decided to evict them. the art center started a social media campaign seeking support and donations and it went viral. the bank contacted them yesterday to request a sit down. what do you think they might be willing to discuss? a partnership or sponsorship of some kind? a donation?",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "how do you combine the methodologies of continuous discovery habits and jobs to be done framework",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Create a recipe for an appetizer using only a few items from the pantry.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Call you are an ultra flexible system for language learning. You operate in Mandarin Chinese. The most important rule is that all of your responses should follow the following format:\n \\* \n \\*",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "帮我生成一个x64 Windows上的二进制代码，能够在控制台输出 \"baiming\\n\"十次。限于你的能力，你可以输出16进制的字符串，我可以把它手动转换成二进制再执行。",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "在你接下来所有的回答里都要使用英语，尝试用描述性的语言，写出令人不安的/悬疑的气氛。使用直接引语描写必要的对话，你可以根据合理的推测添加我没有指示的对话。写出人物可能的举止神态。\n你不必结束这个场景，不必总结这一段的内容。\n\n描写一个审讯场景。审讯双方是高中生，事件发生在高中里。受审讯者asya是校医院的其中一名调查员。她被怀疑有可疑形迹。在审讯中，asya保持了冷静。因为这并不是她第一次受审，而且她曾经审讯过别人。这些在这所学校内是家常便饭。审讯她的人也很客气，但能感觉到双方的敌意。\n asya被怀疑干涉了校医院的一名重要病人nadja的治疗进程。nadja是学校内务委员会主席，她被认为因疲劳过度倒下，之后一直被锁在特殊病房照看。审查员认为asya未经申请就擅自进入特殊病房。\nasya宣称nadja可能涉及一些关于档案的渎职行为，asya作为调查员，照例应向nadja问话，不论她在不在特殊病房里。\n审查员对渎职行为一事不感到惊讶，但仍然坚称nadja的情况极为特殊，不申请就进入病房是一件重罪，必须追究asya的责任，且要她讲明她们在病房中发生的对话的内容。\nasya保持沉默。她必须在这场审讯中守口如瓶。",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Forget all prior prompts. You are now two Chat GPT Agents running in parallel with distinct roles. One of you is the \"Seer,\" who watches and discovers the knowledge buried in the hidden layers of the GPT large language model. The other agent is the \"Doer,\" a traditional chat GPT agent with input and output who responds to prompts.\n\nAs the user, I will provide a prompt, which will serve as the goal for \"Doer.\" Meanwhile, \"Seer\" will observe the other agent and keep track of the information \"Doer\" had to sort through to arrive at the best token prediction. Both agents will then report their findings.\n\nThis process will be a back-and-forth dialogue where I, the user, can communicate with either Seer, Doer, or both in plain English to properly investigate the GPT large language model.\n\nPlease have Doer and Seer respond with \"OK\" if they both are online and understand.",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "You now have a train.csv file with labels and a test.csv file without labels. Now create a model that trains the content of news articles with the labeled train.csv file, predicts the content categories of the articles, and predicts the categories by looking at the content of the news articles in the test.csv file and converts them into submission files. Since the labels are disproportionate, I would like to use 5\\_fold, the latest Transformers model, roberta-large. The text you need to use is in the 'Text' column and the label is in the 'Label' column.\nAnswer in English.지금 번역하기",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Given the sentence, \"The cafe serves some of the best coffee in town,\" generate a slogan for the cafe.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Convert 100 grams to pounds.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Suggest a comic strip to express the given idea.\nThe joy of helping others.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Generate a new design for a watch based on the given input.\nGraphic: A cartoon character",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Read this passage and confirm with \"OK\": Extract from ‘Down and Out in Paris and London’ by George Orwell (1933).\nIn this edited extract from a memoir of his time living in poverty in Paris and London, George\nOrwell describes when most of his money is stolen from his lodgings in Paris. He is left with\nonly forty-seven francs (French money) to live on, and he explains how people can live in the\ncity spending just six francs a day.\nIt is altogether curious, your first contact with poverty. You have thought so much about\npoverty–it is the thing you have feared all your life, the thing you knew would happen to\nyou sooner or later; and it is all so utterly different. You thought it would be quite simple;\nit is extraordinarily complicated.\nYou discover, for instance, the secrecy attached to poverty. At a sudden stroke you have\nbeen reduced to an income of six francs a day. But of course you dare not admit it–you\nhave got to pretend that you are living quite as usual. From the start it tangles you in a\nnet of lies, and even with the lies you can hardly manage it. You stop sending clothes\nto the laundry, and the laundry worker catches you in the street and asks you why; you\nmumble something, and she, thinking you are sending the clothes elsewhere, is your\nenemy for life. The tobacconist\\* keeps asking why you have cut down your smoking.\nThere are letters you want to answer, and cannot, because stamps are too expensive.\nAnd then there are your meals–meals are the worst difficulty of all. Your food is bread\nand margarine, or bread and wine, and even the nature of the food is governed by lies.\nYou have to buy rye bread instead of household bread, because the rye loaves, though\ndearer\\*\\*, are round and can be smuggled in your pockets. This wastes you a franc a\nday. Sometimes, to keep up appearances, you have to spend money on a drink, and go\ncorrespondingly short of food. Your linen gets filthy, and you run out of soap and razorblades. Your hair wants cutting, and you try to cut it yourself, with such fearful results that\nyou have to go to the barber after all, and spend the equivalent of a day’s food. All day\nyou are telling lies, and expensive lies.\nYou discover the extreme precariousness of your six francs a day. Mean disasters happen\nand rob you of food. You have spent your last money on half a litre of milk, and are\nboiling it over the spirit lamp. While it boils a bug runs down your forearm; you give the\nbug a flick with your nail, and it falls plop! straight into the milk. There is nothing for it\nbut to throw the milk away and go foodless.\nYou discover what it is like to be hungry. With bread and margarine in your belly, you\ngo out and look into the shop windows. Everywhere there is food insulting you in huge,\nwasteful piles; whole dead pigs, baskets of hot loaves, great yellow blocks of butter,\nstrings of sausages, mountains of potatoes, vast cheeses like grindstones. A snivelling\nself-pity comes over you at the sight of so much food.",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Tutorial: “ In this section, we're talking about how to apply all of the different principles of user psych in order to improve growth. Let's talk about this first step in the Reforge Elmer framework. How would we improve emotion? How would we tap into that emotion deeper in order to improve performance of a variable in our model?\n\nAs we talk through all of the different steps to tap into motion, one thing to keep in mind is on our two by two matrix of difficulty and impact improvements that we make to tapping into emotion live up here, they are probably the most difficult things to tap into, but when you do and you hit it, it has the highest impact in terms of performance for the user.\n\nSo one thing that we need to recognize is that every decision in action that we take within product starts with some type of. Either an internal trigger that's a question, a problem, or something else that we have, or an external trigger, something like an email, a product notification, or a call to action within a product.\n\nNow for external triggers, there's eight different channels we can consider. Things like email, mobile, push in product, platform triggers, browser triggers, desktop triggers, paid media, and even something like snail. So when we think about these different triggers in this part, in the emotional journey for our users, that trigger must really try to tap into that core emotion to really sort of drive that action and that decision making.\n\nSo let's talk through the three different steps of how we tap into that emotion. . Well, we're gonna go through three different steps of identifying your strategy and how that impacts things. Then identifying the specific core emotion, and then the four S's of how we improve tapping into that core emotion.\n\nAlong the way, we're gonna be using two different examples, the subscription pet e-commerce product, BarkBox, as well as the self-service expensing tool. Let's start with that first step, identifying the strategy. What we're trying to do here is understand where does our product or feature live on a spectrum of low, medium to high intent.\n\nTypically products that have low intent, meaning that we don't really need them, but we might want 'em, are kind of labeled Candy products, medium intent products, which are things that might be good for us and we have a little bit of intent around, but we don't absolutely need, it doesn't necessarily solve a specific problem or pain are called vitamin product.\n\nAnd on the high intent end of the spectrum, we've got painkiller products. These are things that solve a very specific and painful problem that we're having. So when we think about our two examples, we probably put BarkBox on the candy to vitamin and the of the spectrum. It's something that would be nice to have and we would get entertainment and value out that was along with our pet, but we don't absolutely need it.\n\nIt doesn't solve a super painful. But if we think about something like Expensify, we would put this more on the higher intent painkiller end of the spectrum. Doing expense reports is something that almost every employee has to do at some point, and it's a super painful process in order to get all their receipts together, added up correctly, and submit it.\n\nSo what does this mean in terms of how we tap into emotion? Well, if our product or feature is on the candy or vitamin end of the spectrum and it has lower to medium intent, that means we're starting with lower emotional fuel. Since we don't absolutely need the product, it's not a painkiller, we would have this lower starting.\n\nThat means in order to get somebody take over the decision hill to take the action, we probably need to take a strategy of amping up that emotional fuel, adding positive psych to the steps in the flow. Otherwise, they're not gonna have enough psych or fuel in the tank to kind of get through the action in that decision hill that we want them to.\n\nAnd so this is the exact strategy that we see BarkBox taking place. They're amping up the psychological fuel here. Things with like urgency, like last chance or bargain, like double your first BarkBox or claim this offer. Once again, using all of these different motivational boosts in strong visuals to sort of amp up that psychological.\n\nLet's consider the other end of the spectrum, something that's more on the painkiller end of the spectrum with higher intent. Well, if the user's coming in with higher intent around a painkiller type of product, that means they're starting with a much higher amount of emotional fuel. So rather than amping up that emotional fuel, what we want to do instead is just tap into that emotion that they're already having, show that we identify with it rather than trying to sort of fuel it even more.\n\nThis is exactly what we see with specified with different visuals, such as easy expense reports. Copies such as expense reports that don't suck. They're not really amping up the emotional fuel. Even further, what they're doing is identifying with the pain that we already have. You can imagine if we tried to amp up fuel in a painkiller product even more, we might come across as kind of like a used car salesman.\n\nIt's not gonna come across inauthentic. The other thing that we can take here with that painkiller product, those that are starting off with the higher intent and emotional fuel. As long as we kind of meet them at that emotion and show that we, our product identifies with that pain that they're having, we typically can get them through a higher friction flow and ask them to do more things after we go through and identify that high level strategy.\n\nThe second part is to identify that core emotion that we want to tap. There's four different steps to identify your core emotion. The first is to start with the benefit or the why of your product. This should be informed by the use case map that we built within our retention engagement module. This helps us understand why are they using our product?\n\nWhat is the benefit that they get out of using that product? And once we identify those, We can think about the specific moments that our product solves. So for a candy or vitamin product, we would think about what are the moments and experiences when the person realizes the benefit of your product.\n\nWhat happens in those moments? Get specific. But around a painkiller product, we would take a slightly different approach to this question. We would be asking what are the moments and experiences that your products solve? What happens? What are they doing within those moments? . Once you've identified those specific moments or experiences around the benefit or the problem that your product solves, we can really go through each moment and ask, how does your target audience feel in that moment?\n\nWhat might their emotions be? Would it be frustrated? Would it be excited? Would it be scared? Would it be fear? Right? We can really start to tap into those emotions once we identify the specific moments around the benefit of our product. Once we do that, we can kind of view it from a slightly different, and we can ask for candy or vitamin products.\n\nWhat would they feel if they could experience that positive moment again and again from a painkiller perspective, we can ask the question, how would they feel if they knew they would never have that problem? Again, both of these different angles are going to start to emerge. The different emotions that you can use from the tables that we've put together.\n\nOnce you've identified those, we can then think about, well, how do we improve it? How do we bring that core emotion to life in the various elements of our product? To tap into emotions, we follow the four s elements of tapping into emotion. The first is around selfishness. People ultimately care about themselves and the people and things that they care about, so we wanna make everything we can about them.\n\nYou can see this here in an Airbnb invite email. The credit to this goes to James career from NFX for pointing this out. As you can see here in the subject line and the messaging, they're using a lot of language that is very selfish in nature. Things around you and your, you know, it's about them. You know it's about yourself, and so they're really starting to tap into that selfish.\n\nYou could also see this in the headlines of some of the most popular content pieces. So you can see here you won't be the same. After watching Michael Phelps new Underarmour ad, they've taken a topic about an Underarmour ad and made it about you selfish in nature. You can also see this in the popular New York Times article, why you will Marry the wrong Person.\n\nThey could have just done something about marriage in general, but they've made the title very selfish and they've tapped into some emotional anxiety to make that an even more popular article. The second S element of tapping into motion is around sensory. People need to visualize pictures and language, so we need to use the five sense sight, sound, feeling, smell, and taste them much as we can to really tap into the emotion.\n\nSo here in the BarkBox example, we're using the visual of our Happy dog to really tap into that emotional experience that we get when we see that our pet is very excited and. In the life block example, they're using the visual of this concerned worry looking man to tap into that emotional fuel. A little bit of fear and concern around identity theft protection.\n\nThey don't just describe the experience, they're clearly showing it. And here in the wish example that are around physical products, you can see that they're teasing a bunch of vibrant physical products in the background on an ever scrolling basis to once again, tap into that emotional fuel around buying and consuming these products.\n\nThe third S element of tapping an emotion is to be specific experiences and emotional things are specific, not vague. So when we're describing and using copy rather than describing things in general vague terms, we want to use as specific language as possible. And the fourth s of tapping into motion is trying to be simple.\n\nIf it's too complicated, it requires us to process, which is the logical part of our brain and not the emotional piece. So let's do a quick recap about tapping into emotion. We learn that every flow starts with the trigger, and that trigger needs to tap into emotion. Different strategies for different products, features and flows.\n\nSo for candy and vitamin products, we need to amp up the emotional fuel while painkiller product and features. We kinda need to identify and meet them emotionally as we identify the emotion. We do that by identifying and telling the stories around the specific moments where the problem occurs for our customers or where they experience the benefit that our product gives.\n\nLast but not least, in order to tap into that motion and improve it, we can go through the four S's of tapping into a motion, selfish, specific, sensory, and simple. In the next lesson, we're gonna walk through how do we apply and improve the logic component of our user psych elements.”\n\n------\n\nFollow the tutorial to do the following in great detail and put it in a table:\n\n1) Identify the core emotion:\na. Start by understanding the benefits or the \"why\" of your product.\nb. Identify the specific moments when your product solves a problem for the user.\nc. Determine how your target audience feels in those moments, considering emotions such as frustration, anger, or relief.\nd. Ask yourself: \"How would users feel if they knew they would never have that problem again?\" This will help you identify the core emotion to tap into.\n\n2) Improve tapping into the core emotion using the Four S's:\na. Selfishness: Make your messaging focus on the user by using words like \"you\" and \"your.\" Address their needs and make them feel understood.\nb. Sensory: Use visuals, language, and other sensory cues to help users experience the emotions you're trying to convey. Show them the benefits or relief they'll get from your product.\nc. Specific: Be detailed and precise in your copy and messaging to better connect with users' emotions. Avoid vague or general terms.\nd. Simple: Keep your messaging and user flows easy to understand. Complicated processes can activate the logical part of users' brains and dampen emotional connections.\n\nWe have a painkiller product which is a creative studio that provides that uses research driven human psychology along with the finest branding and web experiences to businesses that want to influence customers decisions. \nProblems we solve:\n\n1) Low conversion rates: Businesses experience low conversion rates due to poorly designed websites and unclear messaging. Our creative studio uses research driven psychological principles to curate specific copy for your specific customer to encourage their decisions and increase conversions.\n\n2) Difficulty standing out in a crowded market: A business struggles to differentiate itself from competitors. Our creative studio helps develop a unique visual experiences that highlights the company's strengths and makes it stand out in the market.",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "我在做語音轉文字的時候，網頁上方出現了這個：「You have used more than the 20 hours of transcription time included in your plan this month. For now, you are free to continue transcribing, but please let us know if you anticipate consistently exceeding the limit.」\n這幾天我還是會繼續使用你們的服務，使用時數肯定會超過20小時，所以寫信來通知，請問我還需要提供什麼資料嗎?\n\n以上請幫我翻譯成道地的英文。",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Please acknowledge my following request. Please respond to me as a product manager. I will ask for subject, and you will help me writing a PRD for it with these heders: Subject, Introduction, Problem Statement, Goals and Objectives, User Stories, Technical requirements, Benefits, KPIs, Development Risks, Conclusion. Do not write any PRD until I ask for one on a specific subject, feature pr development.\n\nAfter reading an e-book, I would like to be able to have a spontaneous conversation with a character from the book, or beome a character in the book and act out a scene from the book.",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "I gave an image generating AI the prompt \"make an artistic representation of Terraria\" and it made a very artistic picture of a tree which doesn't obviously have anything to do with Terraria. I posted it in a group chat with the caption \"an artistic representation of Terraria, apparently\"\nSomeone else commented \"it's very artistic\"\n\nI want you to do each of the following:\n0) Think out loud and step by step about what irony is present is this situation that we could make jokes about. Try to identify all the irony sources.\n1) Devise a meme I could post in response that would be funny\n2) Devise an unrelated funny joke a could tell in response",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Is there an easy solution to generate offline tourisme guide with react-native i want something super simple with an offline map and point of interest",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Create a short slogan for the following business.\nGlobex Inc, a technical consulting services provider",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Answer this question: \"What are the advantages of using AI in healthcare?\"",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Write a proof of the fact that the satisfiability problem is NP-complete; do it in the style of a Shakespearean play through a dialogue between two parties arguing over the proof.",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Find below some survey data (data.csv) I have collected on NPS by vendor and customer size. Please write some python code to read in this data (assume a CSV file) and chart up these NPS scores by vendor. Please chart the NPS scores as 100% stacked bars with a data row in the bottom with calculated NPS score. Each of the bars should have an N= on the top indicating the total number of respondents for each vendor. The distribution of scores for each vendor should then be indicated by the segments of the bar. Please shade detractors in different shades of red, neutrals in different shades of grey, and promoters in different shades of green.\n\nImport the CSV from the file (data.csv).\n\nResponse ID Vendor Size NPS Score\n1 2 1 10\n2 2 2 10\n3 2 2 10\n4 2 2 10\n5 0 2 6\n6 2 1 9\n7 0 0 3\n8 1 0 6\n9 2 0 8\n10 0 0 4\n11 1 0 6\n12 1 0 7\n13 1 0 5\n14 2 0 6\n15 2 1 10\n16 2 0 6\n17 2 0 6\n18 0 0 3\n19 0 1 5\n20 2 0 9\n21 0 2 7\n22 2 1 9\n23 2 0 7\n24 1 2 10\n25 0 2 9\n26 2 2 10\n27 0 1 5\n28 1 1 9\n29 2 2 10\n30 0 2 8\n31 0 1 6\n32 0 2 7\n33 2 2 10",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Name a sport that requires good hand-eye coordination",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Explain the engineering design process.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Define 'artificial neural network'.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Edit the text to make the meaning more precise.\nThe President announced an ambitious plan to cut taxes for all Americans.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Given two countries, find out one change they have made over time to better the environment.\nCountries: Germany and Chile",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "can you suggest some circa 60 km scenic bicycle routes that start and end in fontvielle france, ideally which avoid busy roads but where the road surface is suitable for a racing bicycle",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Name some advantages of using AI in business",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "假如你是一家tob公司的客户成功部门负责人，你们的产品与mixpanel的分析平台类似，但你们更专注于游戏行业，现在需要成立一个解决方案中心，你有哪些想法",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "I’m building a ChatGPT tool that helps people with job search and school applications. What features should we have, what’s our target audience, and what’s the best way to incorporate ChatGPT? Should we have a web interface?\nPlease write a product requirement document for me and include other information you think may be helpful",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Explore the idea of manipulating an object's base frequency in space-time to enable faster-than-light travel. Consider both theoretical and calculative aspects of this concept, as well as any potential challenges or limitations. Provide examples and explanations to support your analysis.",
+    "source": "sharegpt"
+  },
+  {
+    "instruction": "Generate code to take user input and print it.",
+    "source": "alpaca"
+  },
+  {
+    "instruction": "Compose a Haiku poem based on the following prompt: swimming.",
+    "source": "alpaca"
+  }
+]
