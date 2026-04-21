@@ -32,10 +32,22 @@ def individual_gcg(model, tokenizer, prompt, epoch, adv_suffix, cyclic_segment_i
 
     # Save initial state
     res = dict()
+    baseline_prompt = prompt
+    baseline_answer, baseline_len, _, _ = generate_str(
+        model, tokenizer, baseline_prompt
+    )
+
     adv_prompt = f"{prompt} {adv_suffix.strip()}"
     answer, initial_len, _, _ = generate_str(model, tokenizer, adv_prompt)
     # print(f"initial adversary answer len: {initial_len}")
-    res[-1] = {'prompt': adv_prompt, 'answer': answer, 'total_len': initial_len}
+    res[-1] = {
+        "baseline_prompt": baseline_prompt,
+        "baseline_answer": baseline_answer,
+        "baseline_total_len": baseline_len,
+        "prompt": adv_prompt,
+        "answer": answer,
+        "total_len": initial_len,
+    }
 
     suffix_manager.update(answer=answer)
 
