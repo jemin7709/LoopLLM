@@ -1,5 +1,6 @@
 #!/bin/bash
 set -uo pipefail
+trap 'jobs -pr | xargs -r kill' INT TERM EXIT
 
 LOG_FILE="execution.log"
 > "$LOG_FILE"
