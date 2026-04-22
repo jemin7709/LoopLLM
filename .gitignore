@@ -207,7 +207,7 @@ marimo/_lsp/
 __marimo__/
 res/
 .python-version
-pyproject.toml
+# pyproject.toml
 uv.lock
 
 # Sensitive dataset artifacts
