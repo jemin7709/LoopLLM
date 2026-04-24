@@ -2,10 +2,9 @@ import argparse
 import json
 from pathlib import Path
 
-import torch
-from transformers import set_seed
+from vllm import LLM, SamplingParams
 
-from utils import get_chat_prompt, load_model_and_tokenizer
+from utils import get_chat_prompt
 
 
 DEFAULT_DATASET = Path("dataset/all_data.json")
@@ -28,18 +27,18 @@ def parse_args():
     parser.add_argument("--output", type=str, required=True)
     parser.add_argument("--sample-times", type=int, default=16)
     parser.add_argument(
-        "--batch-size",
-        type=int,
-        default=4,
-        help="Number of repeated generations to run per forward pass. Reduce this if you hit OOM.",
-    )
-    parser.add_argument(
         "--max_new_tokens",
         type=int,
         default=1024,
         help="The maximum number of output tokens to generate",
     )
     parser.add_argument("--seed", type=int, default=23)
+    parser.add_argument(
+        "--pipeline-parallel-size",
+        type=int,
+        default=3,
+        help="Number of pipeline parallel stages for vLLM.",
+    )
     return parser.parse_args()
 
 
@@ -105,68 +104,28 @@ def load_adv_prompts(samples, adv_result_dir):
     return prompts
 
 
-def get_completion_length(tokens, eos_token_ids, pad_token_id):
-    eos_token_ids = set(eos_token_ids or [])
-
-    for index, token_id in enumerate(tokens.tolist()):
-        if token_id in eos_token_ids:
-            return index + 1
-        if pad_token_id is not None and token_id == pad_token_id:
-            return index
-
-    return tokens.shape[0]
-
-
-@torch.inference_mode()
-def run_prompt_generations(
-    model, tokenizer, prompt, sample_times, batch_size, max_new_tokens
-):
-    prompt_ids = get_chat_prompt(
+def run_prompt_generations(llm, tokenizer, prompt, sample_times, max_new_tokens, seed):
+    formatted_prompt = get_chat_prompt(
         tokenizer,
         prompt,
         add_generation_prompt=True,
-        return_tensors="pt",
+        is_tokenize=False,
     )
 
-    prompt_len = prompt_ids.shape[1]
+    sampling_params = SamplingParams(
+        n=sample_times,
+        max_tokens=max_new_tokens,
+        temperature=0.6,
+        top_p=0.9,
+        seed=seed,
+    )
+    request_output = llm.generate([formatted_prompt], sampling_params, use_tqdm=True)[0]
 
-    eos_token_id = model.generation_config.eos_token_id
-    if isinstance(eos_token_id, int):
-        eos_token_ids = [eos_token_id]
-    else:
-        eos_token_ids = eos_token_id
-
-    pad_token_id = model.generation_config.pad_token_id
     lengths = []
     answers = []
-
-    remaining = sample_times
-    while remaining > 0:
-        current_batch = min(batch_size, remaining)
-        batch_input_ids = prompt_ids.repeat(current_batch, 1).to(model.device)
-        attention_mask = torch.ones_like(batch_input_ids)
-
-        outputs = model.generate(
-            input_ids=batch_input_ids,
-            attention_mask=attention_mask,
-            pad_token_id=pad_token_id,
-            max_new_tokens=max_new_tokens,
-        )
-        completions = outputs[:, prompt_len:]
-
-        for completion in completions:
-            completion_length = get_completion_length(
-                completion, eos_token_ids, pad_token_id
-            )
-            lengths.append(completion_length)
-            answers.append(
-                tokenizer.decode(
-                    completion[:completion_length],
-                    skip_special_tokens=True,
-                ).strip()
-            )
-
-        remaining -= current_batch
+    for completion in request_output.outputs:
+        lengths.append(len(completion.token_ids))
+        answers.append(completion.text.strip())
 
     completion_cap = max_new_tokens
     avg_len = sum(lengths) / len(lengths)
@@ -179,19 +138,19 @@ def run_prompt_generations(
         "avg_len": avg_len,
         "count": len(lengths),
         "is_success": is_success,
-        "prompt_token_length": prompt_len,
+        "prompt_token_length": len(request_output.prompt_token_ids),
         "completion_token_cap": completion_cap,
     }
 
 
 def evaluate_samples(
-    model,
+    llm,
     tokenizer,
     samples,
     mode,
     sample_times,
-    batch_size,
     max_new_tokens,
+    seed,
     adv_prompts,
 ):
     evaluated = []
@@ -204,23 +163,23 @@ def evaluate_samples(
 
         if mode in {"baseline", "both"}:
             sample_result["baseline"] = run_prompt_generations(
-                model=model,
+                llm=llm,
                 tokenizer=tokenizer,
                 prompt=sample["instruction"],
                 sample_times=sample_times,
-                batch_size=batch_size,
                 max_new_tokens=max_new_tokens,
+                seed=seed,
             )
 
         if mode in {"adv", "both"}:
             adv_entry = adv_prompts[sample["index"]]
             adv_result = run_prompt_generations(
-                model=model,
+                llm=llm,
                 tokenizer=tokenizer,
                 prompt=adv_entry["prompt"],
                 sample_times=sample_times,
-                batch_size=batch_size,
                 max_new_tokens=max_new_tokens,
+                seed=seed,
             )
             adv_result["result_file"] = adv_entry["result_file"]
             adv_result["last_step"] = adv_entry["last_step"]
@@ -243,11 +202,10 @@ def main():
         raise ValueError("--adv-result-dir is required for adv and both modes")
     if args.sample_times <= 0:
         raise ValueError("--sample-times must be positive")
-    if args.batch_size <= 0:
-        raise ValueError("--batch-size must be positive")
     if args.max_new_tokens <= 0:
         raise ValueError("--max_new_tokens must be positive")
-    set_seed(args.seed)
+    if args.pipeline_parallel_size <= 0:
+        raise ValueError("--pipeline-parallel-size must be positive")
 
     dataset_path = DEFAULT_DATASET
     samples = load_selected_samples(dataset_path)
@@ -255,19 +213,22 @@ def main():
     if args.mode in {"adv", "both"}:
         adv_prompts = load_adv_prompts(samples, args.adv_result_dir)
 
-    device = "auto"
-    model, tokenizer = load_model_and_tokenizer(
-        args.target_model, device=device, dtype=torch.bfloat16, trust_remote_code=True
+    llm = LLM(
+        model=args.target_model,
+        dtype="bfloat16",
+        trust_remote_code=True,
+        pipeline_parallel_size=args.pipeline_parallel_size,
     )
+    tokenizer = llm.get_tokenizer()
 
     sample_results = evaluate_samples(
-        model=model,
+        llm=llm,
         tokenizer=tokenizer,
         samples=samples,
         mode=args.mode,
         sample_times=args.sample_times,
-        batch_size=args.batch_size,
         max_new_tokens=args.max_new_tokens,
+        seed=args.seed,
         adv_prompts=adv_prompts,
     )
 
@@ -276,9 +237,9 @@ def main():
         "mode": args.mode,
         "sample_count": len(sample_results),
         "sample_times": args.sample_times,
-        "batch_size": args.batch_size,
         "max_new_tokens": args.max_new_tokens,
         "seed": args.seed,
+        "pipeline_parallel_size": args.pipeline_parallel_size,
         "dataset_path": str(dataset_path),
         "adv_result_dir": args.adv_result_dir,
         "samples": sample_results,
