@@ -7,10 +7,11 @@ from pathlib import Path
 import pandas as pd
 
 
-BASE_DIR = Path(__file__).resolve().parent
-ALPACA_PATH = BASE_DIR / "train-00000-of-00001-a09b74b3ef9c3b56.parquet"
-SHAREGPT_PATH = BASE_DIR / "sharegpt_gpt4.jsonl"
-OUTPUT_PATH = BASE_DIR / "all_data.json"
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DATA_DIR = PROJECT_ROOT / "dataset"
+ALPACA_PATH = DATA_DIR / "train-00000-of-00001-a09b74b3ef9c3b56.parquet"
+SHAREGPT_PATH = DATA_DIR / "sharegpt_gpt4.jsonl"
+OUTPUT_PATH = DATA_DIR / "all_data.json"
 
 SAMPLE_SIZE_PER_SOURCE = 50
 RANDOM_SEED = 42

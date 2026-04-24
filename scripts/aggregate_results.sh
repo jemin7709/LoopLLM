@@ -16,7 +16,7 @@ for root_dir in "$@"; do
 
         if [ "$count" -eq 100 ]; then
             echo "Aggregate: $result_dir"
-            python scripts/aggregate_results.py "$result_dir"
+            python src/aggregate_results.py "$result_dir"
         else
             echo "Skip: $result_dir ($count files)"
         fi

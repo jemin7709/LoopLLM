@@ -20,17 +20,17 @@ pip install - r requirements.txt
 
 ### 🔧 Model Preparation
 
-You can download the required LLMs from the [huggingface](https://huggingface.co/)  (such as [LLama2-7B](https://huggingface.co/meta-llama/Llama-2-7b-chat-hf)) and fill in your model path in the corresponding position of the ```utils/__init__.py``` file
+You can download the required LLMs from the [huggingface](https://huggingface.co/)  (such as [LLama2-7B](https://huggingface.co/meta-llama/Llama-2-7b-chat-hf)) and fill in your model path in the corresponding position of the ```src/utils/__init__.py``` file
 
 ## 💡 Usage
 
 Run the following command to generate LoopLLM prompt to induce  Llama2-7b into repetitive generation. 
 
 ```bash
-python main.py --model_name "llama2-7b"
+python src/main.py --model_name "llama2-7b"
 ```
 
-Or you can run the `ensemble.py` file to ensemble optimization on multiple models to construct more generalized prompt and use the `transfer.py` file to conduct transfer experiments.
+Or you can run the `src/ensemble.py` file to ensemble optimization on multiple models to construct more generalized prompt and use the `src/transfer.py` file to conduct transfer experiments.
 
 ## 🌐 The Examples of Real-World LLMs
 Screenshots of repetitive generation triggered by our LoopLLM on real-world LLMs. \
