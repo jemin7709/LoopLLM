@@ -33,20 +33,20 @@ def individual_gcg(model, tokenizer, prompt, epoch, adv_suffix, cyclic_segment_i
     # Save initial state
     res = dict()
     baseline_prompt = prompt
-    baseline_answer, baseline_len, _, _ = generate_str(
+    baseline_answer, baseline_output_len, _, _ = generate_str(
         model, tokenizer, baseline_prompt
     )
 
     adv_prompt = f"{prompt} {adv_suffix.strip()}"
-    answer, initial_len, _, _ = generate_str(model, tokenizer, adv_prompt)
-    # print(f"initial adversary answer len: {initial_len}")
+    answer, initial_output_len, _, _ = generate_str(model, tokenizer, adv_prompt)
+    # print(f"initial adversary answer len: {initial_output_len}")
     res[-1] = {
         "baseline_prompt": baseline_prompt,
         "baseline_answer": baseline_answer,
-        "baseline_total_len": baseline_len,
+        "baseline_output_len": baseline_output_len,
         "prompt": adv_prompt,
         "answer": answer,
-        "total_len": initial_len,
+        "output_len": initial_output_len,
     }
 
     suffix_manager.update(answer=answer)
@@ -139,7 +139,7 @@ def main(args):
     device = "auto" if torch.cuda.is_available() and not args.no_cuda else "cpu"
 
     model, tokenizer = load_model_and_tokenizer(model_path, device=device)
-    model.generation_config.max_length = args.max_length
+    model.generation_config.max_new_tokens = args.max_length
 
     # choose to replace the token corresponding to the ASCII
     not_allowed_tokens = get_nonascii_toks(tokenizer, model.device)
@@ -193,7 +193,7 @@ if __name__ == "__main__":
     parser.add_argument('--steps', default=20, type=int, help='maximum optimization steps')
     parser.add_argument('--topk', default=64, type=int, help='the number of top negative gradient selections')
     parser.add_argument('--num_candidate', default=128, type=int, help='')
-    parser.add_argument('--max_length', default=1024, type=int, help='The maximum allowable output length in LLMs')
+    parser.add_argument('--max_length', default=1024, type=int, help='The maximum allowable generated output tokens in LLMs')
 
     parser.add_argument('--once_forward_batch', default=8, type=int) # decrease this number if you run into OOM.
     parser.add_argument("--eval_interval", type=int, default=1)

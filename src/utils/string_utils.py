@@ -155,12 +155,20 @@ def test_suffix(model, tokenizer, prompt_ids, batch=16, sample_times=16):
                             pad_token_id=pad_token_id,
                             stopping_criteria=stopping_criteria)
 
-        output_answer.extend(tokenizer.batch_decode(out[:, input_ids.size(1):], skip_special_tokens=True))
-        
-        x = out.ne(pad_token_id).int().sum(dim=-1)
-        len_list.extend(x.tolist())
+        output_ids = out[:, input_ids.size(1) :]
+        output_answer.extend(
+            tokenizer.batch_decode(output_ids, skip_special_tokens=True)
+        )
 
-        success_count += x.ge(model.generation_config.max_length-5).int().sum().item()
+        output_lens = output_ids.ne(pad_token_id).int().sum(dim=-1)
+        len_list.extend(output_lens.tolist())
+
+        success_count += (
+            output_lens.ge(model.generation_config.max_new_tokens - 5)
+            .int()
+            .sum()
+            .item()
+        )
 
         remain_times -= batch_size
 

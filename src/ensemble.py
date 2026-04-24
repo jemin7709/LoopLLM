@@ -270,7 +270,7 @@ if __name__ == '__main__':
             MODEL_PATHS[model_paths[id]],
             # device='cpu',
         )
-        model.generation_config.max_length = max_length
+        model.generation_config.max_new_tokens = max_length
         workers.append({
             'model': model,
             'tokenizer': tokenizer,
