@@ -29,4 +29,6 @@ MODEL_PATHS = {
     "gemma2-2b": "google/gemma-2-2b-it",  # google/gemma-2-2b-it
     "llama3-1b": "meta-llama/Llama-3.2-1B-Instruct",  # meta-llama/Llama-3.2-1B-Instruct
     "solar-open": "upstage/Solar-Open-100B",
+    "qwen3-0.6b": "Qwen/Qwen3-0.6B",
+    "qwen3-1.7b": "Qwen/Qwen3-1.7B",
 }
