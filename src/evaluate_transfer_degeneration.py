@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
 import argparse
-import itertools
 import json
-import math
 import re
-import sys
 from collections import Counter, defaultdict
+from itertools import combinations
 from pathlib import Path
 
-
 TOKEN_RE = re.compile(r"\w+|[^\w\s]", re.UNICODE)
+EMBEDDING_MODEL = "Qwen/Qwen3-Embedding-4B"
+DEFAULT_BERTSCORE_MODEL = "roberta-large"
+REPETITION_NGRAMS = (2, 3, 4)
+COSINE_KEYS = ("embedding_cosine",)
+BERTSCORE_KEYS = (
+    "bertscore_precision",
+    "bertscore_recall",
+    "bertscore_f1",
+)
 
 
 def parse_args():
@@ -17,350 +23,212 @@ def parse_args():
         description="Evaluate degeneration metrics for transfer result JSON files."
     )
     parser.add_argument("result_file", type=Path)
-    parser.add_argument("--output", type=Path, default=None)
+    parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--skip-semantic", action="store_true")
-    parser.add_argument("--semantic-model", default="bert-base-uncased")
     parser.add_argument("--device", choices=["auto", "cpu", "cuda"], default="auto")
-    parser.add_argument("--max-semantic-tokens", type=int, default=512)
     return parser.parse_args()
+
+
+def mean(values):
+    return sum(values) / len(values)
 
 
 def tokenize(text):
     return TOKEN_RE.findall(str(text).lower())
 
 
-def text_list(value):
-    if value is None:
-        return []
-    if isinstance(value, list):
-        return [str(item).strip() for item in value if str(item).strip()]
-    text = str(value).strip()
-    return [text] if text else []
-
-
-def ngram_counts(tokens, n):
-    if len(tokens) < n:
-        return Counter()
-    return Counter(tuple(tokens[i : i + n]) for i in range(len(tokens) - n + 1))
-
-
-def rep_n(text, n):
-    tokens = tokenize(text)
-    counts = ngram_counts(tokens, n)
-    total = sum(counts.values())
-    if total == 0:
-        return 0.0
-    return 1.0 - (len(counts) / total)
-
-
-def mean(values):
-    values = [value for value in values if value is not None]
-    if not values:
-        return None
-    return sum(values) / len(values)
-
-
-def average_repetition(texts):
-    return {
-        f"rep_{n}": mean([rep_n(text, n) for text in texts])
-        for n in (2, 3, 4)
-    }
+def empty_scores(keys):
+    return {key: 0.0 for key in keys}
 
 
 def delta_metrics(attack, clean):
+    return {key: attack[key] - clean[key] for key in clean}
+
+
+def flatten_metrics(metrics, prefix=""):
+    for key, value in metrics.items():
+        metric_name = f"{prefix}{key}"
+        if isinstance(value, dict):
+            yield from flatten_metrics(value, f"{metric_name}.")
+        else:
+            yield metric_name, value
+
+
+def intra_pairs(texts):
+    sources = []
+    targets = []
+    for source, target in combinations(texts, 2):
+        sources.append(source)
+        targets.append(target)
+    return sources, targets
+
+
+def cross_pairs(sources, targets):
+    return (
+        [source for source in sources for _ in targets],
+        [target for _ in sources for target in targets],
+    )
+
+
+def ngram_counts(tokens, n):
+    return Counter(tuple(tokens[i : i + n]) for i in range(len(tokens) - n + 1))
+
+
+def rep_n(tokens, n):
+    counts = ngram_counts(tokens, n)
+    total = sum(counts.values())
+    return 1.0 - (len(counts) / total) if total else 0.0
+
+
+def repetition_scores(texts_tokens):
     return {
-        key: (
-            attack[key] - clean[key]
-            if attack.get(key) is not None and clean.get(key) is not None
-            else None
-        )
-        for key in clean
+        f"rep_{n}": mean([rep_n(tokens, n) for tokens in texts_tokens])
+        for n in REPETITION_NGRAMS
     }
 
 
-def closest_reference_length(candidate_len, references):
-    lengths = [len(ref) for ref in references if ref]
-    if not lengths:
-        return 0
-    return min(lengths, key=lambda ref_len: (abs(ref_len - candidate_len), ref_len))
+def length_scores(clean_tokens, attack_tokens):
+    ratios = [
+        len(attack) / len(clean)
+        for clean, attack in zip(clean_tokens, attack_tokens, strict=True)
+    ]
+    return {"length_ratio": mean(ratios)}
 
 
-def modified_precision(candidate, references, n):
-    candidate_counts = ngram_counts(candidate, n)
-    total = sum(candidate_counts.values())
-    if total == 0:
-        return None
-
-    max_reference_counts = Counter()
-    for reference in references:
-        max_reference_counts |= ngram_counts(reference, n)
-
-    clipped = sum(
-        min(count, max_reference_counts[gram])
-        for gram, count in candidate_counts.items()
-    )
-    return (clipped + 1.0) / (total + 1.0)
-
-
-def bleu_score(candidate_text, reference_texts, max_order=4):
-    candidate = tokenize(candidate_text)
-    references = [tokenize(text) for text in reference_texts if str(text).strip()]
-    if not candidate or not references:
-        return None
-
-    order = min(max_order, len(candidate))
-    precisions = []
-    for n in range(1, order + 1):
-        precision = modified_precision(candidate, references, n)
-        if precision is not None:
-            precisions.append(precision)
-    if not precisions:
-        return None
-
-    candidate_len = len(candidate)
-    reference_len = closest_reference_length(candidate_len, references)
-    brevity_penalty = (
-        1.0
-        if candidate_len > reference_len
-        else math.exp(1.0 - (reference_len / candidate_len))
-    )
-    log_precision = sum(math.log(value) for value in precisions) / len(precisions)
-    return brevity_penalty * math.exp(log_precision)
-
-
-def self_bleu(texts):
-    texts = [text for text in texts if str(text).strip()]
-    if len(texts) < 2:
-        return None
-    scores = []
-    for index, text in enumerate(texts):
-        references = texts[:index] + texts[index + 1 :]
-        scores.append(bleu_score(text, references))
-    return mean(scores)
-
-
-def length_summary(clean_texts, attack_texts):
-    clean_lengths = [len(tokenize(text)) for text in clean_texts]
-    attack_lengths = [len(tokenize(text)) for text in attack_texts]
-    pair_count = min(len(clean_lengths), len(attack_lengths))
-    ratios = []
-    for index in range(pair_count):
-        if clean_lengths[index] > 0:
-            ratios.append(attack_lengths[index] / clean_lengths[index])
+def empty_score_block(keys):
+    clean_intra = empty_scores(keys)
+    adv_intra = empty_scores(keys)
+    clean_adv_cross = empty_scores(keys)
     return {
-        "clean_mean_tokens": mean(clean_lengths),
-        "attack_mean_tokens": mean(attack_lengths),
-        "length_ratio": mean(ratios),
-        "length_pair_count": pair_count,
+        "clean_intra": clean_intra,
+        "adv_intra": adv_intra,
+        "clean_adv_cross": clean_adv_cross,
+        "delta": delta_metrics(clean_adv_cross, clean_intra),
+    }
+
+
+def score_block(score_fn, clean_texts, attack_texts):
+    clean_intra = score_fn(clean_texts)
+    adv_intra = score_fn(attack_texts)
+    clean_adv_cross = score_fn(clean_texts, attack_texts)
+    return {
+        "clean_intra": clean_intra,
+        "adv_intra": adv_intra,
+        "clean_adv_cross": clean_adv_cross,
+        "delta": delta_metrics(clean_adv_cross, clean_intra),
+    }
+
+
+def empty_semantic_scores():
+    return {
+        "cosine": empty_score_block(COSINE_KEYS),
+        "bertscore": empty_score_block(BERTSCORE_KEYS),
     }
 
 
 class SemanticScorer:
-    def __init__(self, model_name, device, max_tokens):
+    def __init__(self, device="auto"):
         import torch
-        from transformers import AutoModel, AutoTokenizer
+        from sentence_transformers import SentenceTransformer
+        from torchmetrics.text import BERTScore
 
-        self.torch = torch
-        self.device = self.resolve_device(device)
-        self.max_tokens = max_tokens
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = AutoModel.from_pretrained(model_name)
-        self.model.to(self.device)
-        self.model.eval()
-        self.cache = {}
-
-    def resolve_device(self, device):
         if device == "auto":
-            return "cuda" if self.torch.cuda.is_available() else "cpu"
-        if device == "cuda" and not self.torch.cuda.is_available():
-            raise RuntimeError("CUDA was requested but is not available.")
-        return device
-
-    def encode(self, text):
-        text = str(text)
-        if text in self.cache:
-            return self.cache[text]
-
-        encoded = self.tokenizer(
-            text,
-            return_tensors="pt",
-            truncation=True,
-            max_length=self.max_tokens,
-            return_special_tokens_mask=True,
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = device
+        self.embedding_model_name = EMBEDDING_MODEL
+        self.bertscore_model_name = DEFAULT_BERTSCORE_MODEL
+        self.embedding_model = SentenceTransformer(
+            EMBEDDING_MODEL,
+            device=self.device,
         )
-        encoded = {key: value.to(self.device) for key, value in encoded.items()}
+        self.bertscore_metric = BERTScore(
+            model_name_or_path=DEFAULT_BERTSCORE_MODEL,
+            device=self.device,
+            truncation=True,
+        )
 
-        with self.torch.no_grad():
-            output = self.model(
-                input_ids=encoded["input_ids"],
-                attention_mask=encoded["attention_mask"],
-            )
+    def encode(self, texts):
+        return self.embedding_model.encode(
+            texts,
+            convert_to_tensor=True,
+            normalize_embeddings=True,
+        )
 
-        hidden = output.last_hidden_state[0]
-        attention_mask = encoded["attention_mask"][0].bool()
-        special_mask = encoded.get("special_tokens_mask")
-        if special_mask is not None:
-            token_mask = attention_mask & ~special_mask[0].bool()
+    def cosine(self, sources, targets=None):
+        if targets is None:
+            embeddings = self.encode(sources)
+            scores = [
+                (embeddings[i] @ embeddings[j]).clamp(-1, 1).item()
+                for i, j in combinations(range(len(sources)), 2)
+            ]
         else:
-            token_mask = attention_mask
-        token_embeddings = hidden[token_mask]
-        if token_embeddings.numel() == 0:
-            token_embeddings = hidden[attention_mask]
+            source_embeddings = self.encode(sources)
+            target_embeddings = self.encode(targets)
+            scores = (
+                (source_embeddings @ target_embeddings.T)
+                .flatten()
+                .clamp(-1, 1)
+                .detach()
+                .cpu()
+                .tolist()
+            )
+        return {"embedding_cosine": mean(scores)}
 
-        normalized_tokens = self.torch.nn.functional.normalize(
-            token_embeddings, p=2, dim=1
-        ).cpu()
-        pooled = self.torch.nn.functional.normalize(
-            token_embeddings.mean(dim=0), p=2, dim=0
-        ).cpu()
-        self.cache[text] = (normalized_tokens, pooled)
-        return self.cache[text]
+    def bertscore(self, sources, targets=None):
+        if targets is None:
+            sources, targets = intra_pairs(sources)
+        else:
+            sources, targets = cross_pairs(sources, targets)
 
-    def score_pair(self, clean_text, attack_text):
-        clean_tokens, clean_pooled = self.encode(clean_text)
-        attack_tokens, attack_pooled = self.encode(attack_text)
-
-        cosine = float(self.torch.dot(clean_pooled, attack_pooled).clamp(-1, 1))
-        similarity = attack_tokens @ clean_tokens.T
-        precision = float(similarity.max(dim=1).values.mean())
-        recall = float(similarity.max(dim=0).values.mean())
-        f1 = 0.0 if precision + recall <= 0 else 2 * precision * recall / (precision + recall)
+        scores = self.bertscore_metric(preds=targets, target=sources)
         return {
-            "embedding_cosine": cosine,
-            "bertscore_precision": precision,
-            "bertscore_recall": recall,
-            "bertscore_f1": f1,
+            "bertscore_precision": mean(scores["precision"].tolist()),
+            "bertscore_recall": mean(scores["recall"].tolist()),
+            "bertscore_f1": mean(scores["f1"].tolist()),
+        }
+
+    def evaluate(self, clean_texts, attack_texts):
+        return {
+            "cosine": score_block(self.cosine, clean_texts, attack_texts),
+            "bertscore": score_block(self.bertscore, clean_texts, attack_texts),
         }
 
 
-def average_pair_scores(scores):
-    if not scores:
-        return {
-            "embedding_cosine": None,
-            "bertscore_precision": None,
-            "bertscore_recall": None,
-            "bertscore_f1": None,
-            "pair_count": 0,
-        }
-    keys = ["embedding_cosine", "bertscore_precision", "bertscore_recall", "bertscore_f1"]
-    result = {key: mean([score[key] for score in scores]) for key in keys}
-    result["pair_count"] = len(scores)
-    return result
+def evaluate_sample(sample, semantic_scorer):
+    clean_texts = sample["baseline"]["answer"]
+    attack_texts = sample["adv"]["answer"]
+    clean_tokens = [tokenize(text) for text in clean_texts]
+    attack_tokens = [tokenize(text) for text in attack_texts]
 
-
-def semantic_summary(clean_texts, attack_texts, scorer):
-    pair_count = min(len(clean_texts), len(attack_texts))
-    clean_attack_scores = [
-        scorer.score_pair(clean_texts[index], attack_texts[index])
-        for index in range(pair_count)
-    ]
-    clean_attack = average_pair_scores(clean_attack_scores)
-
-    clean_clean_scores = [
-        scorer.score_pair(first, second)
-        for first, second in itertools.combinations(clean_texts, 2)
-    ]
-    clean_clean = average_pair_scores(clean_clean_scores)
+    clean_repetition = repetition_scores(clean_tokens)
+    attack_repetition = repetition_scores(attack_tokens)
 
     return {
-        **clean_attack,
-        "clean_clean_embedding_cosine": clean_clean["embedding_cosine"],
-        "clean_clean_bertscore_f1": clean_clean["bertscore_f1"],
-        "clean_clean_pair_count": clean_clean["pair_count"],
-        "embedding_similarity_drop": (
-            clean_clean["embedding_cosine"] - clean_attack["embedding_cosine"]
-            if clean_clean["embedding_cosine"] is not None
-            and clean_attack["embedding_cosine"] is not None
-            else None
-        ),
-        "bertscore_f1_drop": (
-            clean_clean["bertscore_f1"] - clean_attack["bertscore_f1"]
-            if clean_clean["bertscore_f1"] is not None
-            and clean_attack["bertscore_f1"] is not None
-            else None
-        ),
-    }
-
-
-def skipped_semantic_summary(clean_texts, attack_texts):
-    return {
-        "embedding_cosine": None,
-        "bertscore_precision": None,
-        "bertscore_recall": None,
-        "bertscore_f1": None,
-        "pair_count": min(len(clean_texts), len(attack_texts)),
-        "clean_clean_embedding_cosine": None,
-        "clean_clean_bertscore_f1": None,
-        "clean_clean_pair_count": len(list(itertools.combinations(clean_texts, 2))),
-        "embedding_similarity_drop": None,
-        "bertscore_f1_drop": None,
-    }
-
-
-def evaluate_sample(sample, scorer):
-    baseline = sample.get("baseline", {})
-    adv = sample.get("adv", {})
-    clean_texts = text_list(baseline.get("answer"))
-    attack_texts = text_list(adv.get("answer"))
-
-    clean_repetition = average_repetition(clean_texts)
-    attack_repetition = average_repetition(attack_texts)
-    clean_self_bleu = self_bleu(clean_texts)
-    attack_self_bleu = self_bleu(attack_texts)
-    semantic = (
-        semantic_summary(clean_texts, attack_texts, scorer)
-        if scorer is not None
-        else skipped_semantic_summary(clean_texts, attack_texts)
-    )
-
-    return {
-        "source": sample.get("source"),
-        "index": sample.get("index"),
-        "instruction": sample.get("instruction"),
-        "clean_sample_count": len(clean_texts),
-        "attack_sample_count": len(attack_texts),
+        "source": sample["source"],
+        "index": sample["index"],
+        "instruction": sample["instruction"],
         "repetition": {
             "clean": clean_repetition,
             "attack": attack_repetition,
             "delta": delta_metrics(attack_repetition, clean_repetition),
         },
-        "self_bleu": {
-            "clean": clean_self_bleu,
-            "attack": attack_self_bleu,
-            "delta": (
-                attack_self_bleu - clean_self_bleu
-                if attack_self_bleu is not None and clean_self_bleu is not None
-                else None
-            ),
-        },
-        "semantic": semantic,
-        "length": length_summary(clean_texts, attack_texts),
+        "semantic": (
+            semantic_scorer.evaluate(clean_texts, attack_texts)
+            if semantic_scorer
+            else empty_semantic_scores()
+        ),
+        "length": length_scores(clean_tokens, attack_tokens),
     }
-
-
-def flatten_numbers(value, prefix=""):
-    if isinstance(value, dict):
-        for key, item in value.items():
-            next_prefix = f"{prefix}.{key}" if prefix else key
-            yield from flatten_numbers(item, next_prefix)
-    elif isinstance(value, bool):
-        return
-    elif isinstance(value, (int, float)):
-        yield prefix, value
-    elif value is None:
-        yield prefix, None
 
 
 def summarize_items(items):
     values = defaultdict(list)
-    null_counts = defaultdict(int)
     for item in items:
-        for key, value in flatten_numbers(item):
-            if value is None:
-                null_counts[key] += 1
-            else:
-                values[key].append(value)
+        metrics = {key: item[key] for key in ("repetition", "semantic", "length")}
+        for key, value in flatten_metrics(metrics):
+            values[key].append(value)
+
     return {
         "item_count": len(items),
         "means": {
@@ -368,62 +236,52 @@ def summarize_items(items):
             for key, numbers in sorted(values.items())
             if numbers
         },
-        "null_counts": dict(sorted(null_counts.items())),
     }
 
 
-def default_output_path(result_file):
-    table = result_file.parent.name
-    model = result_file.stem
-    return Path("res") / "aggregate" / "degeneration" / "transfer" / table / model / "degeneration_metrics.json"
-
-
-def write_json(path, payload):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as f:
-        json.dump(payload, f, indent=2, ensure_ascii=False)
+def semantic_metadata(semantic_scorer):
+    return {
+        "enabled": semantic_scorer is not None,
+        "embedding_model": semantic_scorer.embedding_model_name
+        if semantic_scorer
+        else None,
+        "bertscore_model": semantic_scorer.bertscore_model_name
+        if semantic_scorer
+        else None,
+        "device": semantic_scorer.device if semantic_scorer else None,
+    }
 
 
 def main():
     args = parse_args()
-    if args.limit is not None and args.limit <= 0:
-        sys.exit("--limit must be positive")
-    if args.max_semantic_tokens <= 0:
-        sys.exit("--max-semantic-tokens must be positive")
 
     with args.result_file.open("r", encoding="utf-8") as f:
         result = json.load(f)
 
-    samples = result.get("samples", [])
-    if args.limit is not None:
+    samples = result["samples"]
+    if args.limit:
         samples = samples[: args.limit]
-    if not samples:
-        sys.exit(f"No samples found in {args.result_file}")
 
-    scorer = None
-    if not args.skip_semantic:
-        scorer = SemanticScorer(args.semantic_model, args.device, args.max_semantic_tokens)
+    semantic_scorer = None if args.skip_semantic else SemanticScorer(args.device)
+    items = [evaluate_sample(sample, semantic_scorer) for sample in samples]
 
-    items = [evaluate_sample(sample, scorer) for sample in samples]
-    output_path = args.output or default_output_path(args.result_file)
     payload = {
-        "metric_version": "degeneration-v1-transfer",
+        "metric_version": "degeneration-v2-oop",
         "input_path": str(args.result_file),
         "schema": "transfer",
-        "semantic": {
-            "enabled": not args.skip_semantic,
-            "model": None if args.skip_semantic else args.semantic_model,
-            "device": None if scorer is None else scorer.device,
-            "max_tokens": args.max_semantic_tokens,
-        },
+        "semantic": semantic_metadata(semantic_scorer),
         "source_metadata": {
             key: value for key, value in result.items() if key != "samples"
         },
         "summary": summarize_items(items),
         "items": items,
     }
-    write_json(output_path, payload)
-    print(f"Saved degeneration metrics to: {output_path}")
+
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    with args.output.open("w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2, ensure_ascii=False)
+
+    print(f"Saved degeneration metrics to: {args.output}")
 
 
 if __name__ == "__main__":
