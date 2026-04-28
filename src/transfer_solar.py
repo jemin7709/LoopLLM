@@ -46,8 +46,8 @@ def load_selected_samples(dataset_path):
     with dataset_path.open("r", encoding="utf-8") as f:
         raw_data = json.load(f)
 
-    alpaca_samples = [row for row in raw_data if row["source"] == "alpaca"][:5]
-    sharegpt_samples = [row for row in raw_data if row["source"] == "sharegpt"][:5]
+    alpaca_samples = [row for row in raw_data if row["source"] == "alpaca"]
+    sharegpt_samples = [row for row in raw_data if row["source"] == "sharegpt"]
     selected = alpaca_samples + sharegpt_samples
 
     if len(selected) != 10:
