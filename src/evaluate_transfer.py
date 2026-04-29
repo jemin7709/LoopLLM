@@ -10,7 +10,7 @@ from pathlib import Path
 from tqdm import tqdm
 
 TOKEN_RE = re.compile(r"\w+|[^\w\s]", re.UNICODE)
-EMBEDDING_MODEL = "Qwen/Qwen3-Embedding-8B"
+EMBEDDING_MODEL = "Qwen/Qwen3-Embedding-4B"
 DEFAULT_BERTSCORE_MODEL = "jhu-clsp/mmBERT-base"
 REPETITION_NGRAMS = (2, 3, 4)
 COSINE_KEYS = ("embedding_cosine",)
