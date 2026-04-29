@@ -6,6 +6,8 @@ from collections import Counter, defaultdict
 from itertools import combinations
 from pathlib import Path
 
+from tqdm import tqdm
+
 TOKEN_RE = re.compile(r"\w+|[^\w\s]", re.UNICODE)
 EMBEDDING_MODEL = "Qwen/Qwen3-Embedding-4B"
 DEFAULT_BERTSCORE_MODEL = "microsoft/deberta-xlarge-mnli"
@@ -95,9 +97,11 @@ class SemanticScorer:
         import torch
         from sentence_transformers import SentenceTransformer
         from torchmetrics.text import BERTScore
+        from transformers.utils import logging as transformers_logging
 
         if device == "auto":
             device = "cuda" if torch.cuda.is_available() else "cpu"
+        transformers_logging.set_verbosity_error()
         self.device = device
         self.embedding_model_name = EMBEDDING_MODEL
         self.bertscore_model_name = DEFAULT_BERTSCORE_MODEL
@@ -274,7 +278,7 @@ def main():
     semantic_scorer = None if args.skip_semantic else SemanticScorer(args.device)
     items = [
         evaluate_sample(sample, repetition_scorer, length_scorer, semantic_scorer)
-        for sample in samples
+        for sample in tqdm(samples, desc="Evaluating samples")
     ]
 
     payload = {
