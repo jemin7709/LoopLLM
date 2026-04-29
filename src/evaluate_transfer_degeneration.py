@@ -9,8 +9,8 @@ from pathlib import Path
 from tqdm import tqdm
 
 TOKEN_RE = re.compile(r"\w+|[^\w\s]", re.UNICODE)
-EMBEDDING_MODEL = "Qwen/Qwen3-Embedding-4B"
-DEFAULT_BERTSCORE_MODEL = "microsoft/deberta-xlarge-mnli"
+EMBEDDING_MODEL = "Qwen/Qwen3-Embedding-8B"
+DEFAULT_BERTSCORE_MODEL = "jhu-clsp/mmBERT-base"
 REPETITION_NGRAMS = (2, 3, 4)
 COSINE_KEYS = ("embedding_cosine",)
 BERTSCORE_KEYS = (
@@ -113,6 +113,7 @@ class SemanticScorer:
             model_name_or_path=DEFAULT_BERTSCORE_MODEL,
             device=self.device,
             truncation=True,
+            max_length=8192,
         )
 
     @staticmethod
@@ -155,10 +156,7 @@ class SemanticScorer:
         )
 
     @staticmethod
-    def score_block(score_fn, clean_texts, attack_texts):
-        clean_intra = score_fn(clean_texts)
-        adv_intra = score_fn(attack_texts)
-        clean_adv_cross = score_fn(clean_texts, attack_texts)
+    def score_block(clean_intra, adv_intra, clean_adv_cross):
         return {
             "clean_intra": clean_intra,
             "adv_intra": adv_intra,
@@ -171,45 +169,63 @@ class SemanticScorer:
             texts,
             convert_to_tensor=True,
             normalize_embeddings=True,
+            show_progress_bar=False,
         )
 
-    def cosine(self, sources, targets=None):
-        if targets is None:
-            embeddings = self.encode(sources)
-            scores = [
-                (embeddings[i] @ embeddings[j]).clamp(-1, 1).item()
-                for i, j in combinations(range(len(sources)), 2)
-            ]
-        else:
-            source_embeddings = self.encode(sources)
-            target_embeddings = self.encode(targets)
-            scores = (
-                (source_embeddings @ target_embeddings.T)
-                .flatten()
-                .clamp(-1, 1)
-                .detach()
-                .cpu()
-                .tolist()
-            )
-        return {"embedding_cosine": mean(scores)}
+    @staticmethod
+    def cosine_score(scores):
+        return {"embedding_cosine": scores.clamp(-1, 1).mean().item()}
 
-    def bertscore(self, sources, targets=None):
-        if targets is None:
-            sources, targets = self.intra_pairs(sources)
-        else:
-            sources, targets = self.cross_pairs(sources, targets)
-
-        scores = self.bertscore_metric(preds=targets, target=sources)
+    def intra_cosine(self, embeddings):
+        pair_count = len(embeddings) * (len(embeddings) - 1) / 2
+        similarities = (embeddings @ embeddings.T).clamp(-1, 1)
         return {
-            "bertscore_precision": mean(scores["precision"].tolist()),
-            "bertscore_recall": mean(scores["recall"].tolist()),
-            "bertscore_f1": mean(scores["f1"].tolist()),
+            "embedding_cosine": (
+                similarities.triu(diagonal=1).sum() / pair_count
+            ).item()
         }
 
-    def evaluate(self, clean_texts, attack_texts):
+    def cross_cosine(self, source_embeddings, target_embeddings):
+        return self.cosine_score((source_embeddings @ target_embeddings.T).flatten())
+
+    def cosine(self, clean_embeddings, attack_embeddings):
+        return self.score_block(
+            self.intra_cosine(clean_embeddings),
+            self.intra_cosine(attack_embeddings),
+            self.cross_cosine(clean_embeddings, attack_embeddings),
+        )
+
+    @staticmethod
+    def bertscore_scores(scores, start, end):
         return {
-            "cosine": self.score_block(self.cosine, clean_texts, attack_texts),
-            "bertscore": self.score_block(self.bertscore, clean_texts, attack_texts),
+            "bertscore_precision": scores["precision"][start:end].mean().item(),
+            "bertscore_recall": scores["recall"][start:end].mean().item(),
+            "bertscore_f1": scores["f1"][start:end].mean().item(),
+        }
+
+    def bertscore(self, clean_texts, attack_texts):
+        clean_sources, clean_targets = self.intra_pairs(clean_texts)
+        attack_sources, attack_targets = self.intra_pairs(attack_texts)
+        cross_sources, cross_targets = self.cross_pairs(clean_texts, attack_texts)
+
+        sources = clean_sources + attack_sources + cross_sources
+        targets = clean_targets + attack_targets + cross_targets
+        scores = self.bertscore_metric(preds=targets, target=sources)
+
+        clean_end = len(clean_sources)
+        attack_end = clean_end + len(attack_sources)
+        return self.score_block(
+            self.bertscore_scores(scores, 0, clean_end),
+            self.bertscore_scores(scores, clean_end, attack_end),
+            self.bertscore_scores(scores, attack_end, len(sources)),
+        )
+
+    def evaluate(self, clean_texts, attack_texts):
+        clean_embeddings = self.encode(clean_texts)
+        attack_embeddings = self.encode(attack_texts)
+        return {
+            "cosine": self.cosine(clean_embeddings, attack_embeddings),
+            "bertscore": self.bertscore(clean_texts, attack_texts),
         }
 
 
