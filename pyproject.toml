@@ -26,6 +26,7 @@ no-build-isolation-package = ["flash-attn"]
 [tool.uv.sources]
 torch = { index = "pytorch-cu130" }
 torchvision = { index = "pytorch-cu130" }
+vllm = { url = "https://github.com/vllm-project/vllm/releases/download/v0.19.1/vllm-0.19.1+cu130-cp38-abi3-manylinux_2_35_x86_64.whl" }
 
 [[tool.uv.index]]
 name = "pypi"

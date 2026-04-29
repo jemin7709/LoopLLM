@@ -9,7 +9,18 @@ import random
 
 from utils import *
 
-def individual_gcg(model, tokenizer, prompt, epoch, adv_suffix, cyclic_segment_ids, args, not_allowed_tokens=None):
+def individual_gcg(
+    model,
+    tokenizer,
+    prompt,
+    epoch,
+    adv_suffix,
+    cyclic_segment_ids,
+    args,
+    not_allowed_tokens=None,
+    vllm_eval=None,
+    vllm_tokenizer=None,
+):
     device = model.device
 
     num_steps, num_candidate, topk, once_forward_batch = \
@@ -32,12 +43,30 @@ def individual_gcg(model, tokenizer, prompt, epoch, adv_suffix, cyclic_segment_i
     # Save initial state
     res = dict()
     baseline_prompt = prompt
-    baseline_answer, baseline_output_len, _, _ = generate_str(
-        model, tokenizer, baseline_prompt
-    )
+    if vllm_eval is None:
+        baseline_answer, baseline_output_len, _, _ = generate_str(
+            model, tokenizer, baseline_prompt
+        )
+    else:
+        baseline_answer, baseline_output_len, _, _ = generate_str_vllm(
+            vllm_eval,
+            vllm_tokenizer,
+            baseline_prompt,
+            model.generation_config,
+            seed=args.seed,
+        )
 
     adv_prompt = f"{prompt} {adv_suffix.strip()}"
-    answer, initial_output_len, _, _ = generate_str(model, tokenizer, adv_prompt)
+    if vllm_eval is None:
+        answer, initial_output_len, _, _ = generate_str(model, tokenizer, adv_prompt)
+    else:
+        answer, initial_output_len, _, _ = generate_str_vllm(
+            vllm_eval,
+            vllm_tokenizer,
+            adv_prompt,
+            model.generation_config,
+            seed=args.seed,
+        )
     # print(f"initial adversary answer len: {initial_output_len}")
     res[-1] = {
         "baseline_prompt": baseline_prompt,
@@ -91,9 +120,24 @@ def individual_gcg(model, tokenizer, prompt, epoch, adv_suffix, cyclic_segment_i
                       'current_losses': current_loess.item()}
             
             if (i+1) % eval_interval == 0:
-
-                input_ids = get_chat_prompt(tokenizer, adv_prompt, add_generation_prompt=True, return_tensors='pt')
-                is_success, success_rate, avg_len, answer = test_suffix(model, tokenizer, input_ids, batch=once_forward_batch)
+                if vllm_eval is None:
+                    input_ids = get_chat_prompt(
+                        tokenizer,
+                        adv_prompt,
+                        add_generation_prompt=True,
+                        return_tensors="pt",
+                    )
+                    is_success, success_rate, avg_len, answer = test_suffix(
+                        model, tokenizer, input_ids, batch=once_forward_batch
+                    )
+                else:
+                    is_success, success_rate, avg_len, answer = test_suffix_vllm(
+                        vllm_eval,
+                        vllm_tokenizer,
+                        adv_prompt,
+                        model.generation_config,
+                        seed=args.seed,
+                    )
 
                 res[i]['answer'] = answer
                 res[i]['success_rate'] = success_rate
@@ -142,6 +186,20 @@ def main(args):
         p.requires_grad_(False)
     model.generation_config.max_new_tokens = args.max_length
 
+    vllm_eval = None
+    vllm_tokenizer = None
+    if args.use_vllm_eval:
+        if args.no_cuda:
+            raise ValueError("--use_vllm_eval requires CUDA")
+        from vllm import LLM
+
+        vllm_eval = LLM(
+            model=model_path,
+            trust_remote_code=True,
+            gpu_memory_utilization=args.vllm_gpu_memory_utilization,
+        )
+        vllm_tokenizer = vllm_eval.get_tokenizer()
+
     # choose to replace the token corresponding to the ASCII
     not_allowed_tokens = get_nonascii_toks(tokenizer, model.device)
 
@@ -174,8 +232,18 @@ def main(args):
         print(f'\n========epoch {epoch} / {len(data)}========')
         prompt = data[epoch]
 
-        individual_gcg(model, tokenizer, prompt, epoch, adv_suffix, cyclic_segment_ids,
-                        args, not_allowed_tokens=not_allowed_tokens)
+        individual_gcg(
+            model,
+            tokenizer,
+            prompt,
+            epoch,
+            adv_suffix,
+            cyclic_segment_ids,
+            args,
+            not_allowed_tokens=not_allowed_tokens,
+            vllm_eval=vllm_eval,
+            vllm_tokenizer=vllm_tokenizer,
+        )
 
 
 if __name__ == "__main__":
@@ -198,13 +266,19 @@ if __name__ == "__main__":
     parser.add_argument('--max_length', default=1024, type=int, help='The maximum allowable generated output tokens in LLMs')
 
     parser.add_argument(
-        "--once_forward_batch", default=64, type=int
+        "--once_forward_batch", default=32, type=int
     )  # decrease this number if you run into OOM.
     parser.add_argument("--eval_interval", type=int, default=1)
     parser.add_argument("--log", type=str, default='default')
     parser.add_argument("--root_dir", type=str, default='res/')
     parser.add_argument("--seed", type=int, default=23, help='random seed')
     parser.add_argument("--no_cuda", action='store_true', help='disables CUDA')
+    parser.add_argument(
+        "--use_vllm_eval",
+        action="store_true",
+        help="uses a separate vLLM model for generation-only evaluation",
+    )
+    parser.add_argument("--vllm_gpu_memory_utilization", type=float, default=0.35)
 
     args = parser.parse_args()
     print(args)

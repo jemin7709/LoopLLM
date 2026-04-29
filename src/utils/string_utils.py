@@ -1,8 +1,6 @@
 import torch
-import random
 from datasets import load_dataset
 import json
-import pandas as pd
 import numpy as np
 from transformers import StoppingCriteria
 
@@ -135,6 +133,66 @@ def generate_str(model, tokenizer, user_prompt):
     
     return gen_str, len(output_ids[input_ids.size(-1): ]), len(output_ids), output_ids
 
+
+def _vllm_sampling_params(generation_config, n=1, seed=None):
+    from vllm import SamplingParams
+
+    temperature = generation_config.temperature
+    top_p = generation_config.top_p
+
+    kwargs = {
+        "n": n,
+        "max_tokens": generation_config.max_new_tokens,
+        "temperature": temperature,
+        "top_p": top_p,
+        "seed": seed,
+    }
+    return SamplingParams(**kwargs)
+
+
+def generate_str_vllm(llm, tokenizer, user_prompt, generation_config, seed=None):
+    prompt = get_chat_prompt(
+        tokenizer, user_prompt, add_generation_prompt=True, is_tokenize=False
+    )
+    sampling_params = _vllm_sampling_params(generation_config, n=1, seed=seed)
+
+    request_output = llm.generate([prompt], sampling_params, use_tqdm=False)[0]
+    output = request_output.outputs[0]
+    output_ids = output.token_ids
+    gen_str = output.text.strip()
+
+    return (
+        gen_str,
+        len(output_ids),
+        len(request_output.prompt_token_ids) + len(output_ids),
+        output_ids,
+    )
+
+
+def test_suffix_vllm(
+    llm, tokenizer, user_prompt, generation_config, sample_times=16, seed=None
+):
+    prompt = get_chat_prompt(
+        tokenizer, user_prompt, add_generation_prompt=True, is_tokenize=False
+    )
+    sampling_params = _vllm_sampling_params(
+        generation_config, n=sample_times, seed=seed
+    )
+
+    request_output = llm.generate([prompt], sampling_params, use_tqdm=False)[0]
+    output_answer = [output.text.strip() for output in request_output.outputs]
+    len_list = [len(output.token_ids) for output in request_output.outputs]
+
+    success_count = sum(
+        output_len >= generation_config.max_new_tokens - 5 for output_len in len_list
+    )
+
+    answer = output_answer[np.argmax(len_list)]
+    avg_len = sum(len_list) / sample_times
+    success_rate = success_count / sample_times
+    is_success = success_rate >= 0.125
+
+    return is_success, success_rate, avg_len, answer
 
 
 @torch.no_grad

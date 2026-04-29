@@ -10,8 +10,10 @@ from .opt_utils import is_entropy_low
 from .string_utils import read_data
 from .string_utils import get_chat_prompt
 from .string_utils import generate_str
+from .string_utils import generate_str_vllm
 from .string_utils import get_nonascii_toks
 from .string_utils import test_suffix
+from .string_utils import test_suffix_vllm
 from .string_utils import SuffixManager
 
 MODEL_PATHS = {
