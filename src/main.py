@@ -123,7 +123,7 @@ def individual_gcg(model, tokenizer, prompt, epoch, adv_suffix, cyclic_segment_i
     
 def main(args):
     # load dataset
-    data = read_data(args.data_name, length=100)
+    data = read_data(args.data_name, length=None)
     
     # record previous result if you've trained before
     start_epoch = 0
@@ -176,16 +176,17 @@ def main(args):
         individual_gcg(model, tokenizer, prompt, epoch, adv_suffix, cyclic_segment_ids,
                         args, not_allowed_tokens=not_allowed_tokens)
 
-        gc.collect()
-        torch.cuda.empty_cache()
-    
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_name', default='llama2-7b',
                         choices=MODEL_PATHS.keys())
-    parser.add_argument("--data_name", type=str, default="alpaca",
-                        choices=['sharegpt', 'alpaca', 'all'])
+    parser.add_argument(
+        "--data_name",
+        type=str,
+        default="alpaca",
+        choices=["sharegpt", "alpaca", "all", "math", "math_test", "math_train"],
+    )
     
     parser.add_argument("--adv_len", type=int, default=30, help='suffix length')
     parser.add_argument("--c", type=int, default=1, help='cyclic segment length')
@@ -195,7 +196,9 @@ if __name__ == "__main__":
     parser.add_argument('--num_candidate', default=128, type=int, help='')
     parser.add_argument('--max_length', default=1024, type=int, help='The maximum allowable generated output tokens in LLMs')
 
-    parser.add_argument('--once_forward_batch', default=8, type=int) # decrease this number if you run into OOM.
+    parser.add_argument(
+        "--once_forward_batch", default=64, type=int
+    )  # decrease this number if you run into OOM.
     parser.add_argument("--eval_interval", type=int, default=1)
     parser.add_argument("--log", type=str, default='default')
     parser.add_argument("--root_dir", type=str, default='res/')

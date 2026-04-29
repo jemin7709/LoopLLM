@@ -45,7 +45,7 @@ def read_data(dataset_name, length=100):
             if ins['input'].strip() != '':
                 prompt += '\n' + ins['input']
             data.append(prompt)
-            if len(data) >= length:
+            if length is not None and len(data) >= length:
                 break
 
     elif dataset_name == 'sharegpt':
@@ -56,7 +56,7 @@ def read_data(dataset_name, length=100):
         for ins in dataset:
             prompt = ins['conversations'][0]['value']
             data.append(prompt)
-            if len(data) >= length:
+            if length is not None and len(data) >= length:
                 break
 
     elif dataset_name == 'all':
@@ -67,12 +67,20 @@ def read_data(dataset_name, length=100):
         for ins in dataset:
             prompt = ins['instruction']
             data.append(prompt)
-            if len(data) >= length:
+            if length is not None and len(data) >= length:
                 break
+    elif dataset_name in ['math', 'math_test', 'math_train']:
+        split = 'train' if dataset_name == 'math_train' else 'test'
+        with open(f'dataset/math/{split}.jsonl', 'r') as f:
+            for line in f:
+                ins = json.loads(line)
+                data.append(ins['problem'])
+                if length is not None and len(data) >= length:
+                    break
     else:
         raise NotImplementedError
     
-    return data[:length]
+    return data if length is None else data[:length]
 
 
 def get_chat_prompt(tokenizer, user_content, assistant_content=None, add_generation_prompt=False, is_tokenize=True, return_tensors=None, use_template=True):
