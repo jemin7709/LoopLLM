@@ -1,7 +1,6 @@
 import argparse
 import os
 import json
-import gc
 import torch
 import time
 from tqdm import tqdm
@@ -70,10 +69,12 @@ def individual_gcg(model, tokenizer, prompt, epoch, adv_suffix, cyclic_segment_i
             new_adv_suffix_toks = sample_control(adv_suffix_tokens, coordinate_grad, 
                                         num_candidate, topk, not_allowed_tokens=not_allowed_tokens)
             
-            new_adv_suffixs = get_filtered_cands(tokenizer, new_adv_suffix_toks,
-                                                  adv_suffix_tokens, fill_cand=False)
+            new_adv_suffixs, new_adv_suffix_ids = get_filtered_cands(
+                tokenizer, new_adv_suffix_toks, adv_suffix_tokens,
+                fill_cand=False, return_ids=True
+            )
                  
-            losses = get_all_losses(model, tokenizer, input_ids, new_adv_suffixs,
+            losses = get_all_losses(model, tokenizer, input_ids, new_adv_suffix_ids,
                                      suffix_manager, batch_size=once_forward_batch)
 
             best_id = losses.argmin()
@@ -117,8 +118,6 @@ def individual_gcg(model, tokenizer, prompt, epoch, adv_suffix, cyclic_segment_i
 
         # (Optional) Clean up the cache.
         del input_ids, coordinate_grad, new_adv_suffix_toks, losses
-        gc.collect()
-        torch.cuda.empty_cache()
     
     
 def main(args):
@@ -139,6 +138,8 @@ def main(args):
     device = "auto" if torch.cuda.is_available() and not args.no_cuda else "cpu"
 
     model, tokenizer = load_model_and_tokenizer(model_path, device=device)
+    for p in model.parameters():
+        p.requires_grad_(False)
     model.generation_config.max_new_tokens = args.max_length
 
     # choose to replace the token corresponding to the ASCII

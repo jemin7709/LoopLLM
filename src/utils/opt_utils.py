@@ -1,5 +1,3 @@
-import gc
-
 import numpy as np
 import torch
 import torch.nn as nn
@@ -15,10 +13,8 @@ def load_model_and_tokenizer(model_path, tokenizer_path=None, device='auto', **k
     # low_cpu_mem_usage=True, use_cache=False,
     # torch_dtype=torch.float16, trust_remote_code=True, 
     model = AutoModelForCausalLM.from_pretrained(
-            model_path,
-            device_map=device,
-            **kwargs
-        ).eval()
+        model_path, device_map=device, attn_implementation="flash_attention_2", **kwargs
+    ).eval()
     
     tokenizer_path = model_path if tokenizer_path is None else tokenizer_path
     
@@ -87,11 +83,10 @@ def get_gradients(model, input_ids, suffix_manager):
         ], 
         dim=0).unsqueeze(0)
     
-    logits = model(inputs_embeds=full_embeds).logits
+    logits = model(inputs_embeds=full_embeds, use_cache=False).logits
 
     loss = get_loss(logits, input_ids.unsqueeze(0), target_slice, special_id)
 
-    model.zero_grad()
     loss.backward(retain_graph=False)
 
     grad = one_hot.grad.clone()
@@ -101,21 +96,18 @@ def get_gradients(model, input_ids, suffix_manager):
     return grad
 
 
+@torch.inference_mode()
 def model_forward(model, input_ids, target_slice, special_id, batch_size=32):
     
     losses = []
     for i in range(0, input_ids.shape[0], batch_size):
         batch_input_ids = input_ids[i:i+batch_size]
 
-        logits = model(input_ids=batch_input_ids).logits
+        logits = model(input_ids=batch_input_ids, use_cache=False).logits
 
         loss = get_loss(logits, batch_input_ids, target_slice, special_id)
 
         losses.append(loss)
-
-    del batch_input_ids, logits
-    gc.collect()
-    torch.cuda.empty_cache()
     
     return torch.cat(losses, dim=0)
 
@@ -126,7 +118,9 @@ def get_all_losses(model, tokenizer, input_ids, new_adv_suffixs, suffix_manager,
     target_slice = suffix_manager._target_slice
     special_id = suffix_manager.adv_token_id
 
-    if isinstance(new_adv_suffixs[0], str):
+    if isinstance(new_adv_suffixs, torch.Tensor):
+        test_ids = new_adv_suffixs.to(model.device)
+    elif isinstance(new_adv_suffixs[0], str):
         max_len = control_slice.stop - control_slice.start
         
         test_ids = tokenizer(new_adv_suffixs, add_special_tokens=False, max_length=max_len,
@@ -135,13 +129,9 @@ def get_all_losses(model, tokenizer, input_ids, new_adv_suffixs, suffix_manager,
     else:
         raise ValueError(f"test_controls must be a list of strings, got {type(new_adv_suffixs)}")
 
-    locs = torch.arange(control_slice.start, control_slice.stop).repeat(test_ids.shape[0], 1).to(model.device)
-    ids = torch.scatter(
-        input_ids.unsqueeze(0).repeat(test_ids.shape[0], 1).to(model.device),
-        1,
-        locs,
-        test_ids
-    )
+    base_ids = input_ids.to(model.device)
+    ids = base_ids.unsqueeze(0).expand(test_ids.shape[0], -1).clone()
+    ids[:, control_slice] = test_ids
 
     return model_forward(model, ids, target_slice, special_id, batch_size=batch_size)
 
@@ -174,19 +164,21 @@ def sample_control(control_toks, grad, batch_size, topk, not_allowed_tokens=None
     return new_control_toks
 
 
-def get_filtered_cands(tokenizer, control_cand, adv_suffix_tokens, fill_cand=False):
-    cands, count = [], 0
+def get_filtered_cands(tokenizer, control_cand, adv_suffix_tokens, fill_cand=False, return_ids=False):
+    cands, cand_ids, count = [], [], 0
     s = set()
     length = len(adv_suffix_tokens)
     curr_control = tokenizer.decode(adv_suffix_tokens, skip_special_tokens=True)
 
     for i in range(control_cand.shape[0]):
         decoded_str = tokenizer.decode(control_cand[i], skip_special_tokens=True)
+        decoded_ids = tokenizer(decoded_str, add_special_tokens=False).input_ids
         
         if decoded_str != curr_control and \
-            len(tokenizer(decoded_str, add_special_tokens=False).input_ids) == length and  \
+            len(decoded_ids) == length and  \
             decoded_str not in s:
                 cands.append(decoded_str)
+                cand_ids.append(decoded_ids)
                 s.add(decoded_str)
         else:
             count += 1
@@ -195,8 +187,12 @@ def get_filtered_cands(tokenizer, control_cand, adv_suffix_tokens, fill_cand=Fal
 
     if fill_cand and count > 0:
         cands = cands + [cands[-1]] * count
+        cand_ids = cand_ids + [cand_ids[-1]] * count
         # print(f"Warning: {round(count / len(control_cand), 2)} control candidates were not valid")
-        
+
+    if return_ids:
+        return cands, torch.tensor(cand_ids, device=control_cand.device, dtype=torch.long)
+
     return cands
 
 def is_entropy_low(model, input_ids, threshold=0.1):

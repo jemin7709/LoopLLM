@@ -8,10 +8,12 @@ dependencies = [
     "accelerate==1.4.0",
     "compressed-tensors==0.15.0.1",
     "datasets==2.16.1",
+    "flash-attn>=2.8.3",
     "numpy==2.2.3",
     "pandas==2.2.3",
     "sentence-transformers>=5.4.1",
     "torch==2.10.0",
+    "torchvision==0.25.0",
     "torchmetrics>=1.9.0",
     "transformers==5.5.1",
     "vllm==0.19.1",
@@ -19,3 +21,18 @@ dependencies = [
 
 [tool.uv]
 package = false
+no-build-isolation-package = ["flash-attn"]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu130" }
+torchvision = { index = "pytorch-cu130" }
+
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple"
+default = true
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
