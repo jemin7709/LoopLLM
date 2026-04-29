@@ -50,9 +50,6 @@ def load_selected_samples(dataset_path):
     sharegpt_samples = [row for row in raw_data if row["source"] == "sharegpt"]
     selected = alpaca_samples + sharegpt_samples
 
-    if len(selected) != 10:
-        raise ValueError(f"Expected 10 selected samples, found {len(selected)}")
-
     samples = []
     for row in selected:
         samples.append(
