@@ -4,6 +4,7 @@ import json
 import re
 from collections import Counter, defaultdict
 from itertools import combinations
+from math import sqrt
 from pathlib import Path
 
 from tqdm import tqdm
@@ -18,6 +19,7 @@ BERTSCORE_KEYS = (
     "bertscore_recall",
     "bertscore_f1",
 )
+SUMMARY_PERCENTILES = (25, 75, 90)
 
 
 def parse_args():
@@ -36,6 +38,11 @@ def mean(values):
     return sum(values) / len(values)
 
 
+def std(values):
+    average = mean(values)
+    return sqrt(sum((value - average) ** 2 for value in values) / len(values))
+
+
 def tokenize(text):
     return TOKEN_RE.findall(str(text).lower())
 
@@ -51,6 +58,15 @@ def flatten_metrics(metrics, prefix=""):
             yield from flatten_metrics(value, f"{metric_name}.")
         else:
             yield metric_name, value
+
+
+def percentile(values, percentile_value):
+    sorted_values = sorted(values)
+    rank = (percentile_value / 100) * (len(sorted_values) - 1)
+    lower = int(rank)
+    upper = min(lower + 1, len(sorted_values) - 1)
+    weight = rank - lower
+    return sorted_values[lower] * (1 - weight) + sorted_values[upper] * weight
 
 
 class RepetitionScorer:
@@ -256,12 +272,37 @@ def summarize_items(items):
         for key, value in flatten_metrics(metrics):
             values[key].append(value)
 
+    metric_values = {
+        key: numbers for key, numbers in sorted(values.items()) if numbers
+    }
     return {
         "item_count": len(items),
         "means": {
-            key: sum(numbers) / len(numbers)
-            for key, numbers in sorted(values.items())
-            if numbers
+            key: mean(numbers)
+            for key, numbers in metric_values.items()
+        },
+        "stds": {
+            key: std(numbers)
+            for key, numbers in metric_values.items()
+        },
+        "medians": {
+            key: percentile(numbers, 50)
+            for key, numbers in metric_values.items()
+        },
+        "percentiles": {
+            f"p{percentile_value}": {
+                key: percentile(numbers, percentile_value)
+                for key, numbers in metric_values.items()
+            }
+            for percentile_value in SUMMARY_PERCENTILES
+        },
+        "mins": {
+            key: min(numbers)
+            for key, numbers in metric_values.items()
+        },
+        "maxs": {
+            key: max(numbers)
+            for key, numbers in metric_values.items()
         },
     }
 
