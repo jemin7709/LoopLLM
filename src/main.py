@@ -7,7 +7,24 @@ from tqdm import tqdm
 from transformers import set_seed
 from omegaconf import OmegaConf
 
-from utils import *
+from utils import (
+    MODEL_PATHS,
+    SuffixManager,
+    generate_str,
+    generate_str_vllm,
+    get_all_losses,
+    get_chat_prompt,
+    get_filtered_cands,
+    get_gradients,
+    get_igcg_combined_cands,
+    get_nonascii_toks,
+    is_entropy_low,
+    load_model_and_tokenizer,
+    read_data,
+    sample_control,
+    test_suffix,
+    test_suffix_vllm,
+)
 
 def individual_gcg(
     model,
