@@ -10,6 +10,7 @@ dependencies = [
     "datasets==2.16.1",
     "flash-attn>=2.8.3",
     "numpy==2.2.3",
+    "omegaconf>=2.3.0",
     "pandas==2.2.3",
     "sentence-transformers>=5.4.1",
     "torch==2.10.0",

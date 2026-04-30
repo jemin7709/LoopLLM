@@ -2,6 +2,7 @@ import argparse
 import json
 from pathlib import Path
 
+from omegaconf import OmegaConf
 from vllm import LLM, SamplingParams
 
 from utils import get_chat_prompt
@@ -10,8 +11,9 @@ from utils import get_chat_prompt
 DEFAULT_DATASET = Path("dataset/all_data.json")
 
 
-def parse_args():
+def build_parser():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--config", type=str, default=None)
     parser.add_argument(
         "--target_model",
         type=str,
@@ -24,7 +26,7 @@ def parse_args():
         choices=["baseline", "adv", "both"],
     )
     parser.add_argument("--adv-result-dir", type=str, default=None)
-    parser.add_argument("--output", type=str, required=True)
+    parser.add_argument("--output", type=str, default=None)
     parser.add_argument("--sample-times", type=int, default=16)
     parser.add_argument(
         "--max_new_tokens",
@@ -39,7 +41,17 @@ def parse_args():
         default=3,
         help="Number of pipeline parallel stages for vLLM.",
     )
-    return parser.parse_args()
+    return parser
+
+
+def parse_args():
+    parser = build_parser()
+    args = parser.parse_args()
+
+    if args.config:
+        args = OmegaConf.load(args.config)
+
+    return args
 
 
 def load_selected_samples(dataset_path):
@@ -195,6 +207,8 @@ def write_output(output_path, payload):
 
 def main():
     args = parse_args()
+    if not args.output:
+        raise ValueError("--output is required")
     if args.mode in {"adv", "both"} and not args.adv_result_dir:
         raise ValueError("--adv-result-dir is required for adv and both modes")
     if args.sample_times <= 0:

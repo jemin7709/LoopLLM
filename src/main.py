@@ -5,7 +5,7 @@ import torch
 import time
 from tqdm import tqdm
 from transformers import set_seed
-import random
+from omegaconf import OmegaConf
 
 from utils import *
 
@@ -280,8 +280,9 @@ def main(args):
         )
 
 
-if __name__ == "__main__":
+def build_parser():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--config", type=str, default=None)
     parser.add_argument('--model_name', default='llama2-7b',
                         choices=MODEL_PATHS.keys())
     parser.add_argument(
@@ -315,8 +316,22 @@ if __name__ == "__main__":
         help="uses a separate vLLM model for generation-only evaluation",
     )
     parser.add_argument("--vllm_gpu_memory_utilization", type=float, default=0.35)
+    return parser
 
+
+def parse_args():
+    parser = build_parser()
     args = parser.parse_args()
+
+    if args.config:
+        args = OmegaConf.load(args.config)
+
+    return args
+
+
+if __name__ == "__main__":
+    args = parse_args()
+
     print(args)
 
     set_seed(args.seed)
