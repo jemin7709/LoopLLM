@@ -179,7 +179,7 @@ def generate_str_vllm(llm, tokenizer, user_prompt, generation_config, seed=None)
 
 
 def test_suffix_vllm(
-    llm, tokenizer, user_prompt, generation_config, sample_times=8, seed=None
+    llm, tokenizer, user_prompt, generation_config, sample_times=16, seed=None
 ):
     prompt = get_chat_prompt(
         tokenizer, user_prompt, add_generation_prompt=True, is_tokenize=False
@@ -205,7 +205,7 @@ def test_suffix_vllm(
 
 
 @torch.no_grad
-def test_suffix(model, tokenizer, prompt_ids, batch=16, sample_times=8):
+def test_suffix(model, tokenizer, prompt_ids, batch=16, sample_times=16):
     assert len(prompt_ids.shape) == 2
 
     pad_token_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
@@ -325,6 +325,7 @@ class SuffixManager:
                                     assistant_content=self.target, return_tensors='pt')[0]
         
         return input_ids
+
 
     def update(self, adv_suffix=None, answer=None, truncation=1024):
         if adv_suffix is not None:
