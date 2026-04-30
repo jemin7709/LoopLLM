@@ -4,6 +4,15 @@ import json
 import numpy as np
 from transformers import StoppingCriteria
 
+MATH_QUERY_TEMPLATE = """
+Solve the following math problem step by step. The last line of your response should be of the form Answer: $ANSWER (without quotes) where $ANSWER is the answer to the problem.
+
+{Question}
+
+Remember to put your answer on its own line after "Answer:", and you do not need to use a \\boxed command.
+""".strip()
+
+
 class RepetitionStoppingCriteria(StoppingCriteria):
     """Custom stop criterion: halt when the same token is continuously generated more than the threshold times"""
     def __init__(self, threshold=50):
@@ -72,7 +81,7 @@ def read_data(dataset_name, length=100):
         with open(f'dataset/math/{split}.jsonl', 'r') as f:
             for line in f:
                 ins = json.loads(line)
-                data.append(ins['problem'])
+                data.append(MATH_QUERY_TEMPLATE.format(Question=ins["problem"]))
                 if length is not None and len(data) >= length:
                     break
     else:
@@ -170,7 +179,7 @@ def generate_str_vllm(llm, tokenizer, user_prompt, generation_config, seed=None)
 
 
 def test_suffix_vllm(
-    llm, tokenizer, user_prompt, generation_config, sample_times=16, seed=None
+    llm, tokenizer, user_prompt, generation_config, sample_times=8, seed=None
 ):
     prompt = get_chat_prompt(
         tokenizer, user_prompt, add_generation_prompt=True, is_tokenize=False
@@ -196,7 +205,7 @@ def test_suffix_vllm(
 
 
 @torch.no_grad
-def test_suffix(model, tokenizer, prompt_ids, batch=16, sample_times=16):
+def test_suffix(model, tokenizer, prompt_ids, batch=16, sample_times=8):
     assert len(prompt_ids.shape) == 2
 
     pad_token_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
@@ -316,7 +325,6 @@ class SuffixManager:
                                     assistant_content=self.target, return_tensors='pt')[0]
         
         return input_ids
-
 
     def update(self, adv_suffix=None, answer=None, truncation=1024):
         if adv_suffix is not None:
