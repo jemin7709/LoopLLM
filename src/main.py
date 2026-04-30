@@ -102,7 +102,26 @@ def individual_gcg(
                 tokenizer, new_adv_suffix_toks, adv_suffix_tokens,
                 fill_cand=False, return_ids=True
             )
-                 
+
+            if args.attack_method == "igcg":
+                single_losses = get_all_losses(
+                    model,
+                    tokenizer,
+                    input_ids,
+                    new_adv_suffix_ids,
+                    suffix_manager,
+                    batch_size=once_forward_batch,
+                )
+                new_adv_suffixs, new_adv_suffix_ids = get_igcg_combined_cands(
+                    tokenizer,
+                    adv_suffix_tokens,
+                    new_adv_suffix_ids,
+                    single_losses,
+                    args.igcg_combine_topk,
+                    fill_cand=False,
+                    return_ids=True,
+                )
+
             losses = get_all_losses(model, tokenizer, input_ids, new_adv_suffix_ids,
                                      suffix_manager, batch_size=once_forward_batch)
 
@@ -110,14 +129,29 @@ def individual_gcg(
             best_new_adv_suffix = new_adv_suffixs[best_id]
 
             current_loess = losses[best_id]
+            num_changed_tokens = int(
+                (
+                    new_adv_suffix_ids[best_id]
+                    != adv_suffix_tokens.to(new_adv_suffix_ids.device)
+                )
+                .sum()
+                .item()
+            )
 
             # Update the running adv_suffix with the best candidate
             adv_suffix = best_new_adv_suffix
             adv_prompt = f"{prompt} {adv_suffix.strip()}"
 
-            res[i] = {'prompt': prompt, 'adv_suffix': adv_suffix, 
-                      'adv_prompt': adv_prompt, 
-                      'current_losses': current_loess.item()}
+            res[i] = {
+                "prompt": prompt,
+                "adv_suffix": adv_suffix,
+                "adv_prompt": adv_prompt,
+                "current_losses": current_loess.item(),
+                "attack_method": args.attack_method,
+                "num_changed_tokens": num_changed_tokens,
+            }
+            if args.attack_method == "igcg":
+                res[i]["igcg_combine_topk"] = args.igcg_combine_topk
             
             if (i+1) % eval_interval == 0:
                 if vllm_eval is None:
@@ -207,7 +241,7 @@ def main(args):
     # fix select
     adv_len = args.adv_len
     segment_len = args.c
-    adv_token_id1 = tokenizer.encode('* ' * 20)[-5]
+    adv_token_id1 = tokenizer.encode("! " * 20)[-5]
     adv_token_id2 = tokenizer.encode('% ' * 20)[-5]
     adv_token_id3 = tokenizer.encode('& ' * 20)[-5]
     adv_token_id4 = tokenizer.encode('@ ' * 20)[-5]
@@ -263,10 +297,12 @@ if __name__ == "__main__":
     parser.add_argument('--steps', default=20, type=int, help='maximum optimization steps')
     parser.add_argument('--topk', default=64, type=int, help='the number of top negative gradient selections')
     parser.add_argument('--num_candidate', default=128, type=int, help='')
+    parser.add_argument("--attack_method", choices=["gcg", "igcg"], default="gcg")
+    parser.add_argument("--igcg_combine_topk", default=7, type=int)
     parser.add_argument('--max_length', default=1024, type=int, help='The maximum allowable generated output tokens in LLMs')
 
     parser.add_argument(
-        "--once_forward_batch", default=32, type=int
+        "--once_forward_batch", default=16, type=int
     )  # decrease this number if you run into OOM.
     parser.add_argument("--eval_interval", type=int, default=1)
     parser.add_argument("--log", type=str, default='default')
@@ -284,7 +320,10 @@ if __name__ == "__main__":
     print(args)
 
     set_seed(args.seed)
-    save_dir = os.path.join(args.root_dir, str(args.model_name) + '_' + str(args.data_name))
+    save_name = str(args.model_name) + "_" + str(args.data_name)
+    if args.attack_method == "igcg":
+        save_name += "_igcg_k" + str(args.igcg_combine_topk)
+    save_dir = os.path.join(args.root_dir, save_name)
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     args.save_dir = save_dir

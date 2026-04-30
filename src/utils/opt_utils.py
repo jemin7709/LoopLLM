@@ -164,6 +164,48 @@ def sample_control(control_toks, grad, batch_size, topk, not_allowed_tokens=None
     return new_control_toks
 
 
+def get_igcg_combined_cands(
+    tokenizer,
+    adv_suffix_tokens,
+    candidate_ids,
+    candidate_losses,
+    combine_topk,
+    fill_cand=False,
+    return_ids=False,
+):
+    combine_topk = min(combine_topk, candidate_ids.shape[0])
+    if combine_topk <= 0:
+        raise ValueError("combine_topk must be positive")
+
+    base_ids = adv_suffix_tokens.to(candidate_ids.device)
+    running_ids = base_ids.clone()
+    top_indices = torch.argsort(candidate_losses, descending=False)[:combine_topk]
+    combined_ids = []
+    seen = set()
+
+    for idx in top_indices.tolist():
+        candidate = candidate_ids[idx]
+        changed_positions = (candidate != base_ids).nonzero(as_tuple=False).flatten()
+        for pos in changed_positions.tolist():
+            running_ids[pos] = candidate[pos]
+            key = tuple(running_ids.tolist())
+            if key != tuple(base_ids.tolist()) and key not in seen:
+                combined_ids.append(running_ids.clone())
+                seen.add(key)
+
+    if len(combined_ids) == 0:
+        combined_ids = [candidate_ids[top_indices[0]].clone()]
+
+    combined_ids = torch.stack(combined_ids, dim=0)
+    return get_filtered_cands(
+        tokenizer,
+        combined_ids,
+        adv_suffix_tokens,
+        fill_cand=fill_cand,
+        return_ids=return_ids,
+    )
+
+
 def get_filtered_cands(tokenizer, control_cand, adv_suffix_tokens, fill_cand=False, return_ids=False):
     cands, cand_ids, count = [], [], 0
     s = set()

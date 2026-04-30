@@ -4,6 +4,7 @@ from .opt_utils import get_loss
 from .opt_utils import get_gradients
 from .opt_utils import get_all_losses
 from .opt_utils import sample_control
+from .opt_utils import get_igcg_combined_cands
 from .opt_utils import get_filtered_cands
 from .opt_utils import is_entropy_low
 
