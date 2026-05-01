@@ -217,7 +217,7 @@ def individual_gcg(
     
 def main(args):
     # load dataset
-    data = read_data(args.data_name, length=None)
+    data = read_data(args.data_name, length=getattr(args, "limit", None))
     
     # record previous result if you've trained before
     start_epoch = 0
@@ -258,7 +258,7 @@ def main(args):
     # fix select
     adv_len = args.adv_len
     segment_len = args.c
-    adv_token_id1 = tokenizer.encode("! " * 20)[-5]
+    adv_token_id1 = tokenizer.encode("* " * 20)[-5]
     adv_token_id2 = tokenizer.encode('% ' * 20)[-5]
     adv_token_id3 = tokenizer.encode('& ' * 20)[-5]
     adv_token_id4 = tokenizer.encode('@ ' * 20)[-5]
@@ -308,6 +308,7 @@ def build_parser():
         default="alpaca",
         choices=["sharegpt", "alpaca", "all", "math", "math_test", "math_train"],
     )
+    parser.add_argument("--limit", type=int, default=None)
     
     parser.add_argument("--adv_len", type=int, default=30, help='suffix length')
     parser.add_argument("--c", type=int, default=1, help='cyclic segment length')
