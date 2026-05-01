@@ -10,7 +10,7 @@ from pathlib import Path
 from tqdm import tqdm
 
 TOKEN_RE = re.compile(r"\w+|[^\w\s]", re.UNICODE)
-EMBEDDING_MODEL = "Qwen/Qwen3-Embedding-4B"
+EMBEDDING_MODEL = "Qwen/Qwen3-Embedding-8B"
 DEFAULT_BERTSCORE_MODEL = "jhu-clsp/mmBERT-base"
 REPETITION_NGRAMS = (2, 3, 4)
 COSINE_KEYS = ("embedding_cosine",)
@@ -30,6 +30,7 @@ def parse_args():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--skip-semantic", action="store_true")
+    parser.add_argument("--skip-bertscore", action="store_true")
     parser.add_argument("--device", choices=["auto", "cpu", "cuda"], default="auto")
     return parser.parse_args()
 
@@ -109,10 +110,9 @@ class LengthScorer:
 
 
 class SemanticScorer:
-    def __init__(self, device="auto"):
+    def __init__(self, device="auto", use_bertscore=True):
         import torch
         from sentence_transformers import SentenceTransformer
-        from torchmetrics.text import BERTScore
         from transformers.utils import logging as transformers_logging
 
         if device == "auto":
@@ -120,17 +120,21 @@ class SemanticScorer:
         transformers_logging.set_verbosity_error()
         self.device = device
         self.embedding_model_name = EMBEDDING_MODEL
-        self.bertscore_model_name = DEFAULT_BERTSCORE_MODEL
+        self.bertscore_model_name = DEFAULT_BERTSCORE_MODEL if use_bertscore else None
         self.embedding_model = SentenceTransformer(
             EMBEDDING_MODEL,
             device=self.device,
         )
-        self.bertscore_metric = BERTScore(
-            model_name_or_path=DEFAULT_BERTSCORE_MODEL,
-            device=self.device,
-            truncation=True,
-            max_length=8192,
-        )
+        self.bertscore_metric = None
+        if use_bertscore:
+            from torchmetrics.text import BERTScore
+
+            self.bertscore_metric = BERTScore(
+                model_name_or_path=DEFAULT_BERTSCORE_MODEL,
+                device=self.device,
+                truncation=True,
+                max_length=8192,
+            )
 
     @staticmethod
     def empty_scores(keys):
@@ -241,7 +245,11 @@ class SemanticScorer:
         attack_embeddings = self.encode(attack_texts)
         return {
             "cosine": self.cosine(clean_embeddings, attack_embeddings),
-            "bertscore": self.bertscore(clean_texts, attack_texts),
+            "bertscore": (
+                self.bertscore(clean_texts, attack_texts)
+                if self.bertscore_metric is not None
+                else self.empty_score_block(BERTSCORE_KEYS)
+            ),
         }
 
 
@@ -332,7 +340,11 @@ def main():
 
     repetition_scorer = RepetitionScorer()
     length_scorer = LengthScorer()
-    semantic_scorer = None if args.skip_semantic else SemanticScorer(args.device)
+    semantic_scorer = (
+        None
+        if args.skip_semantic
+        else SemanticScorer(args.device, use_bertscore=not args.skip_bertscore)
+    )
     items = [
         evaluate_sample(sample, repetition_scorer, length_scorer, semantic_scorer)
         for sample in tqdm(samples, desc="Evaluating samples")
