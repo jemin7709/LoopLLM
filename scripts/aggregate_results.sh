@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [ "$#" -eq 0 ]; then
-    echo "Usage: $0 res/table1_p [res/table_t ...]" >&2
+    echo "Usage: $0 res/test_output/p [res/test_output/t ...]" >&2
     exit 1
 fi
 
