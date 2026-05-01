@@ -226,7 +226,6 @@ def main():
 
     llm = LLM(
         model=args.target_model,
-        dtype="bfloat16",
         trust_remote_code=True,
         pipeline_parallel_size=args.pipeline_parallel_size,
     )
