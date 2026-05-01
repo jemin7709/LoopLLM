@@ -26,6 +26,22 @@ from utils import (
     test_suffix_vllm,
 )
 
+
+def args_to_metadata(args):
+    if OmegaConf.is_config(args):
+        return OmegaConf.to_container(args, resolve=True)
+    return vars(args).copy()
+
+
+def save_metadata(args):
+    metadata_path = os.path.join(args.save_dir, "metadata.json")
+    metadata = {
+        "args": args_to_metadata(args),
+    }
+    with open(metadata_path, "w") as f:
+        json.dump(metadata, f, indent=4, ensure_ascii=False)
+
+
 def individual_gcg(
     model,
     tokenizer,
@@ -339,10 +355,13 @@ def build_parser():
 
 def parse_args():
     parser = build_parser()
-    args = parser.parse_args()
+    cli_args = parser.parse_args()
 
-    if args.config:
-        args = OmegaConf.load(args.config)
+    if cli_args.config:
+        args = OmegaConf.load(cli_args.config)
+        args.config = cli_args.config
+    else:
+        args = cli_args
 
     return args
 
@@ -360,5 +379,6 @@ if __name__ == "__main__":
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     args.save_dir = save_dir
+    save_metadata(args)
 
     main(args)
