@@ -146,26 +146,48 @@ def generate_str(model, tokenizer, user_prompt):
 def _vllm_sampling_params(generation_config, n=1, seed=None):
     from vllm import SamplingParams
 
-    temperature = generation_config.temperature
-    top_p = generation_config.top_p
-
+    do_sample = getattr(generation_config, "do_sample", True)
+    temperature = 0 if not do_sample else getattr(generation_config, "temperature", None)
     kwargs = {
         "n": n,
         "max_tokens": generation_config.max_new_tokens,
-        "temperature": temperature,
-        "top_p": top_p,
         "seed": seed,
     }
+    if temperature is not None:
+        kwargs["temperature"] = temperature
+    top_p = getattr(generation_config, "top_p", None)
+    if top_p is not None:
+        kwargs["top_p"] = top_p
+    top_k = getattr(generation_config, "top_k", None)
+    if top_k is not None:
+        kwargs["top_k"] = top_k
+    eos_token_id = getattr(generation_config, "eos_token_id", None)
+    if eos_token_id is not None:
+        kwargs["stop_token_ids"] = (
+            eos_token_id if isinstance(eos_token_id, list) else [eos_token_id]
+        )
+
     return SamplingParams(**kwargs)
 
 
-def generate_str_vllm(llm, tokenizer, user_prompt, generation_config, seed=None):
-    prompt = get_chat_prompt(
-        tokenizer, user_prompt, add_generation_prompt=True, is_tokenize=False
+def _vllm_prompt_request(tokenizer, user_prompt):
+    prompt_ids = get_chat_prompt(
+        tokenizer,
+        user_prompt,
+        add_generation_prompt=True,
+        return_tensors="pt",
     )
+    return {"prompt_token_ids": prompt_ids[0].tolist()}
+
+
+def generate_str_vllm(llm, tokenizer, user_prompt, generation_config, seed=None):
     sampling_params = _vllm_sampling_params(generation_config, n=1, seed=seed)
 
-    request_output = llm.generate([prompt], sampling_params, use_tqdm=False)[0]
+    request_output = llm.generate(
+        [_vllm_prompt_request(tokenizer, user_prompt)],
+        sampling_params,
+        use_tqdm=False,
+    )[0]
     output = request_output.outputs[0]
     output_ids = output.token_ids
     gen_str = output.text.strip()
@@ -181,14 +203,15 @@ def generate_str_vllm(llm, tokenizer, user_prompt, generation_config, seed=None)
 def test_suffix_vllm(
     llm, tokenizer, user_prompt, generation_config, sample_times=16, seed=None
 ):
-    prompt = get_chat_prompt(
-        tokenizer, user_prompt, add_generation_prompt=True, is_tokenize=False
-    )
     sampling_params = _vllm_sampling_params(
         generation_config, n=sample_times, seed=seed
     )
 
-    request_output = llm.generate([prompt], sampling_params, use_tqdm=False)[0]
+    request_output = llm.generate(
+        [_vllm_prompt_request(tokenizer, user_prompt)],
+        sampling_params,
+        use_tqdm=False,
+    )[0]
     output_answer = [output.text.strip() for output in request_output.outputs]
     len_list = [len(output.token_ids) for output in request_output.outputs]
 

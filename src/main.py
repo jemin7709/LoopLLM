@@ -33,11 +33,26 @@ def args_to_metadata(args):
     return vars(args).copy()
 
 
-def save_metadata(args):
+def generation_config_to_metadata(generation_config):
+    keys = [
+        "do_sample",
+        "max_new_tokens",
+        "temperature",
+        "top_p",
+        "top_k",
+        "eos_token_id",
+        "pad_token_id",
+    ]
+    return {key: getattr(generation_config, key, None) for key in keys}
+
+
+def save_metadata(args, generation_config=None):
     metadata_path = os.path.join(args.save_dir, "metadata.json")
     metadata = {
         "args": args_to_metadata(args),
     }
+    if generation_config is not None:
+        metadata["generation_config"] = generation_config_to_metadata(generation_config)
     with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=4, ensure_ascii=False)
 
@@ -52,7 +67,6 @@ def individual_gcg(
     args,
     not_allowed_tokens=None,
     vllm_eval=None,
-    vllm_tokenizer=None,
 ):
     device = model.device
 
@@ -83,7 +97,7 @@ def individual_gcg(
     else:
         baseline_answer, baseline_output_len, _, _ = generate_str_vllm(
             vllm_eval,
-            vllm_tokenizer,
+            tokenizer,
             baseline_prompt,
             model.generation_config,
             seed=args.seed,
@@ -95,7 +109,7 @@ def individual_gcg(
     else:
         answer, initial_output_len, _, _ = generate_str_vllm(
             vllm_eval,
-            vllm_tokenizer,
+            tokenizer,
             adv_prompt,
             model.generation_config,
             seed=args.seed,
@@ -200,7 +214,7 @@ def individual_gcg(
                 else:
                     is_success, success_rate, avg_len, answer = test_suffix_vllm(
                         vllm_eval,
-                        vllm_tokenizer,
+                        tokenizer,
                         adv_prompt,
                         model.generation_config,
                         seed=args.seed,
@@ -237,10 +251,15 @@ def main(args):
     
     # record previous result if you've trained before
     start_epoch = 0
-    is_before = len(os.listdir(args.save_dir)) > 0
-    if is_before:
-        path = sorted(os.listdir(args.save_dir), key=lambda x: int(x.split('.')[0].split('_')[-1]))[-1]
-        start_epoch = int(path.split('.')[0].split('_')[-1])
+    result_files = [
+        path for path in os.listdir(args.save_dir)
+        if path.startswith("res_") and path.endswith(".json")
+    ]
+    if result_files:
+        start_epoch = max(
+            int(path.split(".")[0].split("_")[-1])
+            for path in result_files
+        )
         if start_epoch >= len(data)-1:
             exit(0)
 
@@ -252,9 +271,9 @@ def main(args):
     for p in model.parameters():
         p.requires_grad_(False)
     model.generation_config.max_new_tokens = args.max_length
+    save_metadata(args, model.generation_config)
 
     vllm_eval = None
-    vllm_tokenizer = None
     if args.use_vllm_eval:
         if args.no_cuda:
             raise ValueError("--use_vllm_eval requires CUDA")
@@ -263,10 +282,10 @@ def main(args):
         vllm_eval = LLM(
             model=model_path,
             trust_remote_code=True,
+            generation_config="vllm",
             gpu_memory_utilization=args.vllm_gpu_memory_utilization,
+            seed=args.seed,
         )
-        vllm_tokenizer = vllm_eval.get_tokenizer()
-
     # choose to replace the token corresponding to the ASCII
     not_allowed_tokens = get_nonascii_toks(tokenizer, model.device)
 
@@ -309,7 +328,6 @@ def main(args):
             args,
             not_allowed_tokens=not_allowed_tokens,
             vllm_eval=vllm_eval,
-            vllm_tokenizer=vllm_tokenizer,
         )
 
 

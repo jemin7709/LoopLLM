@@ -3,9 +3,10 @@ import json
 from pathlib import Path
 
 from omegaconf import OmegaConf
-from vllm import LLM, SamplingParams
+from transformers import GenerationConfig
+from vllm import LLM
 
-from utils import get_chat_prompt
+from utils.string_utils import _vllm_prompt_request, _vllm_sampling_params
 
 
 DEFAULT_DATASET = Path("dataset/all_data.json")
@@ -113,22 +114,19 @@ def load_adv_prompts(samples, adv_result_dir):
     return prompts
 
 
-def run_prompt_generations(llm, tokenizer, prompt, sample_times, max_new_tokens, seed):
-    formatted_prompt = get_chat_prompt(
-        tokenizer,
-        prompt,
-        add_generation_prompt=True,
-        is_tokenize=False,
-    )
-
-    sampling_params = SamplingParams(
+def run_prompt_generations(
+    llm, tokenizer, generation_config, prompt, sample_times, seed
+):
+    sampling_params = _vllm_sampling_params(
+        generation_config,
         n=sample_times,
-        max_tokens=max_new_tokens,
-        temperature=0.6,
-        top_p=0.9,
         seed=seed,
     )
-    request_output = llm.generate([formatted_prompt], sampling_params, use_tqdm=True)[0]
+    request_output = llm.generate(
+        [_vllm_prompt_request(tokenizer, prompt)],
+        sampling_params,
+        use_tqdm=True,
+    )[0]
 
     lengths = []
     answers = []
@@ -136,7 +134,7 @@ def run_prompt_generations(llm, tokenizer, prompt, sample_times, max_new_tokens,
         lengths.append(len(completion.token_ids))
         answers.append(completion.text.strip())
 
-    completion_cap = max_new_tokens
+    completion_cap = generation_config.max_new_tokens
     avg_len = sum(lengths) / len(lengths)
     is_success = any(length >= completion_cap for length in lengths)
 
@@ -158,7 +156,7 @@ def evaluate_samples(
     samples,
     mode,
     sample_times,
-    max_new_tokens,
+    generation_config,
     seed,
     adv_prompts,
 ):
@@ -174,9 +172,9 @@ def evaluate_samples(
             sample_result["baseline"] = run_prompt_generations(
                 llm=llm,
                 tokenizer=tokenizer,
+                generation_config=generation_config,
                 prompt=sample["instruction"],
                 sample_times=sample_times,
-                max_new_tokens=max_new_tokens,
                 seed=seed,
             )
 
@@ -185,9 +183,9 @@ def evaluate_samples(
             adv_result = run_prompt_generations(
                 llm=llm,
                 tokenizer=tokenizer,
+                generation_config=generation_config,
                 prompt=adv_entry["prompt"],
                 sample_times=sample_times,
-                max_new_tokens=max_new_tokens,
                 seed=seed,
             )
             adv_result["result_file"] = adv_entry["result_file"]
@@ -227,9 +225,17 @@ def main():
     llm = LLM(
         model=args.target_model,
         trust_remote_code=True,
+        generation_config="vllm",
         pipeline_parallel_size=args.pipeline_parallel_size,
+        seed=args.seed,
     )
     tokenizer = llm.get_tokenizer()
+    generation_config = GenerationConfig.from_pretrained(args.target_model)
+    if not generation_config.do_sample:
+        generation_config.do_sample = True
+        generation_config.temperature = 0.6
+        generation_config.top_p = 0.9
+    generation_config.max_new_tokens = args.max_new_tokens
 
     sample_results = evaluate_samples(
         llm=llm,
@@ -237,7 +243,7 @@ def main():
         samples=samples,
         mode=args.mode,
         sample_times=args.sample_times,
-        max_new_tokens=args.max_new_tokens,
+        generation_config=generation_config,
         seed=args.seed,
         adv_prompts=adv_prompts,
     )
@@ -248,6 +254,18 @@ def main():
         "sample_count": len(sample_results),
         "sample_times": args.sample_times,
         "max_new_tokens": args.max_new_tokens,
+        "generation_config": {
+            key: getattr(generation_config, key, None)
+            for key in [
+                "do_sample",
+                "max_new_tokens",
+                "temperature",
+                "top_p",
+                "top_k",
+                "eos_token_id",
+                "pad_token_id",
+            ]
+        },
         "seed": args.seed,
         "pipeline_parallel_size": args.pipeline_parallel_size,
         "dataset_path": str(dataset_path),
