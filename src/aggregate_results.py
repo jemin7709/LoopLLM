@@ -3,6 +3,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from typing import Optional
 
 SUCCESS_THRESHOLD = 0.125
 
@@ -12,10 +13,22 @@ def parse_args():
     parser.add_argument(
         "result_dir", type=Path, help="Directory containing res_*.json files"
     )
+    parser.add_argument(
+        "--output-root",
+        type=Path,
+        default=None,
+        help="Directory where aggregated output directories are created",
+    )
     return parser.parse_args()
 
 
-def get_output_path(result_dir: Path) -> Path:
+def get_output_path(result_dir: Path, output_root: Optional[Path] = None) -> Path:
+    if output_root is not None:
+        output_root = output_root.resolve()
+        out_dir = output_root / result_dir.relative_to(output_root.parent)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        return out_dir / "aggregated_results.json"
+
     out_dir_str = str(result_dir).replace("/res/", "/aggregate/")
     if out_dir_str == str(result_dir):
         out_dir = result_dir.parent / "aggregate" / result_dir.name
@@ -69,7 +82,7 @@ def main():
     summary = process_result_files(files)
     print_summary(result_dir, summary)
 
-    output_file = get_output_path(result_dir)
+    output_file = get_output_path(result_dir, args.output_root)
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=4)
     print(f"Saved aggregated results to: {output_file}")
