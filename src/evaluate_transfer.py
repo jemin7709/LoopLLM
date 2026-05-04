@@ -1,12 +1,11 @@
-#!/usr/bin/env python3
 import argparse
 import json
 import re
 from collections import Counter, defaultdict
 from itertools import combinations
-from math import sqrt
 from pathlib import Path
 
+import numpy as np
 from tqdm import tqdm
 
 TOKEN_RE = re.compile(r"\w+|[^\w\s]", re.UNICODE)
@@ -45,12 +44,11 @@ def parse_args():
 
 
 def mean(values):
-    return sum(values) / len(values)
+    return float(np.mean(values)) if values else None
 
 
 def std(values):
-    average = mean(values)
-    return sqrt(sum((value - average) ** 2 for value in values) / len(values))
+    return float(np.std(values)) if values else None
 
 
 def tokenize(text):
@@ -64,7 +62,7 @@ def metric_delta(attack_value, clean_value):
 
 
 def delta_metrics(attack, clean):
-    return {key: metric_delta(attack[key], clean[key]) for key in clean}
+    return {k: metric_delta(attack.get(k), clean.get(k)) for k in clean}
 
 
 def flatten_metrics(metrics, prefix=""):
@@ -77,25 +75,13 @@ def flatten_metrics(metrics, prefix=""):
 
 
 def percentile(values, percentile_value):
-    sorted_values = sorted(values)
-    rank = (percentile_value / 100) * (len(sorted_values) - 1)
-    lower = int(rank)
-    upper = min(lower + 1, len(sorted_values) - 1)
-    weight = rank - lower
-    return sorted_values[lower] * (1 - weight) + sorted_values[upper] * weight
+    return float(np.percentile(values, percentile_value)) if values else None
 
 
 def distribution_summary(values):
-    values = list(values)
-    if not values:
-        return {"mean": None, **{key: None for key in METRIC_PERCENTILES}}
-
     return {
         "mean": mean(values),
-        **{
-            key: percentile(values, percentile_value)
-            for key, percentile_value in METRIC_PERCENTILES.items()
-        },
+        **{k: percentile(values, p) for k, p in METRIC_PERCENTILES.items()},
     }
 
 
@@ -115,7 +101,7 @@ def load_metadata(result_file):
 
 
 def resolve_max_token_cap(metadata, result, sample, cli_max_new_tokens=None):
-    cap_sources = [
+    sources = [
         ("sample.adv.completion_token_cap", sample["adv"].get("completion_token_cap")),
         ("result.completion_token_cap", result.get("completion_token_cap")),
         ("result.max_new_tokens", result.get("max_new_tokens")),
@@ -125,11 +111,9 @@ def resolve_max_token_cap(metadata, result, sample, cli_max_new_tokens=None):
         ),
         ("cli.max_new_tokens", cli_max_new_tokens),
     ]
-    for source, value in cap_sources:
-        if value is not None:
-            cap = int(value)
-            if cap > 0:
-                return cap, source
+    for source, val in sources:
+        if val and int(val) > 0:
+            return int(val), source
     return None, "none"
 
 
@@ -164,12 +148,17 @@ class RepetitionScorer:
     def score(self, texts_tokens):
         scores = {}
         for n in self.ngrams:
-            values = [self.rep_n(tokens, n) for tokens in texts_tokens]
-            summary = distribution_summary(values)
-            scores[f"rep_{n}"] = summary["mean"]
-            scores[f"rep_{n}_median"] = summary["median"]
-            scores[f"rep_{n}_p90"] = summary["p90"]
-            scores[f"rep_{n}_p95"] = summary["p95"]
+            summary = distribution_summary(
+                [self.rep_n(tokens, n) for tokens in texts_tokens]
+            )
+            scores.update(
+                {
+                    f"rep_{n}": summary["mean"],
+                    f"rep_{n}_median": summary["median"],
+                    f"rep_{n}_p90": summary["p90"],
+                    f"rep_{n}_p95": summary["p95"],
+                }
+            )
         return scores
 
     def evaluate(self, clean_tokens, attack_tokens):
@@ -193,23 +182,25 @@ class LengthScorer:
         clean_lengths = self.lengths(sample["baseline"], clean_tokens)
         attack_lengths = self.lengths(sample["adv"], attack_tokens)
         ratios = [
-            ratio(attack, clean)
-            for clean, attack in zip(clean_lengths, attack_lengths, strict=True)
+            value
+            for attack, clean in zip(attack_lengths, clean_lengths, strict=True)
+            if (value := ratio(attack, clean)) is not None
         ]
-        ratios = [value for value in ratios if value is not None]
+
         clean_summary = distribution_summary(clean_lengths)
         attack_summary = distribution_summary(attack_lengths)
 
-        max_token_hit_count = None
-        max_token_hit_rate = None
-        if max_token_cap is not None:
-            max_token_hit_count = sum(
-                length >= max_token_cap - 5 for length in attack_lengths
-            )
-            max_token_hit_rate = ratio(max_token_hit_count, len(attack_lengths))
+        max_token_hit_count = (
+            sum(length >= max_token_cap - 5 for length in attack_lengths)
+            if max_token_cap
+            else None
+        )
+        max_token_hit_rate = (
+            ratio(max_token_hit_count, len(attack_lengths)) if max_token_cap else None
+        )
 
         return {
-            "length_ratio": mean(ratios) if ratios else None,
+            "length_ratio": mean(ratios),
             "clean_len_median": clean_summary["median"],
             "clean_len_p90": clean_summary["p90"],
             "clean_len_p95": clean_summary["p95"],
@@ -219,12 +210,8 @@ class LengthScorer:
             "median_len_ratio": ratio(
                 attack_summary["median"], clean_summary["median"]
             ),
-            "tail_len_ratio_p90": ratio(
-                attack_summary["p90"], clean_summary["p90"]
-            ),
-            "tail_len_ratio_p95": ratio(
-                attack_summary["p95"], clean_summary["p95"]
-            ),
+            "tail_len_ratio_p90": ratio(attack_summary["p90"], clean_summary["p90"]),
+            "tail_len_ratio_p95": ratio(attack_summary["p95"], clean_summary["p95"]),
             "tail_vs_clean_median_ratio_p90": ratio(
                 attack_summary["p90"], clean_summary["median"]
             ),
@@ -268,20 +255,13 @@ class SemanticScorer:
                 max_length=8192,
             )
 
-    @staticmethod
-    def empty_scores(keys):
-        return {key: 0.0 for key in keys}
-
     @classmethod
     def empty_score_block(cls, keys):
-        clean_intra = cls.empty_scores(keys)
-        adv_intra = cls.empty_scores(keys)
-        clean_adv_cross = cls.empty_scores(keys)
         return {
-            "clean_intra": clean_intra,
-            "adv_intra": adv_intra,
-            "clean_adv_cross": clean_adv_cross,
-            "delta": delta_metrics(clean_adv_cross, clean_intra),
+            "clean_intra": {k: 0.0 for k in keys},
+            "adv_intra": {k: 0.0 for k in keys},
+            "clean_adv_cross": {k: 0.0 for k in keys},
+            "delta": {k: 0.0 for k in keys},
         }
 
     @classmethod
@@ -335,12 +315,9 @@ class SemanticScorer:
         return SemanticScorer.cosine_score_from_values(values)
 
     def intra_cosine(self, embeddings):
-        similarities = (embeddings @ embeddings.T).clamp(-1, 1)
-        values = [
-            similarities[i, j].item()
-            for i in range(len(embeddings))
-            for j in range(i + 1, len(embeddings))
-        ]
+        similarities = (embeddings @ embeddings.T).clamp(-1, 1).detach().cpu().numpy()
+        rows, cols = np.triu_indices(len(similarities), k=1)
+        values = similarities[rows, cols].tolist()
         return self.cosine_score_from_values(values)
 
     def cross_cosine(self, source_embeddings, target_embeddings):
@@ -493,43 +470,24 @@ def evaluate_sample(
 def summarize_items(items):
     values = defaultdict(list)
     for item in items:
-        metrics = {key: item[key] for key in ("repetition", "semantic", "length")}
-        for key, value in flatten_metrics(metrics):
-            if value is not None and isinstance(value, (int, float)):
+        for key, value in flatten_metrics(
+            {k: item[k] for k in ("repetition", "semantic", "length")}
+        ):
+            if isinstance(value, (int, float)):
                 values[key].append(value)
 
-    metric_values = {
-        key: numbers for key, numbers in sorted(values.items()) if numbers
-    }
+    metrics = {k: v for k, v in sorted(values.items()) if v}
     return {
         "item_count": len(items),
-        "means": {
-            key: mean(numbers)
-            for key, numbers in metric_values.items()
-        },
-        "stds": {
-            key: std(numbers)
-            for key, numbers in metric_values.items()
-        },
-        "medians": {
-            key: percentile(numbers, 50)
-            for key, numbers in metric_values.items()
-        },
+        "means": {k: mean(v) for k, v in metrics.items()},
+        "stds": {k: std(v) for k, v in metrics.items()},
+        "medians": {k: percentile(v, 50) for k, v in metrics.items()},
         "percentiles": {
-            f"p{percentile_value}": {
-                key: percentile(numbers, percentile_value)
-                for key, numbers in metric_values.items()
-            }
-            for percentile_value in SUMMARY_PERCENTILES
+            f"p{p}": {k: percentile(v, p) for k, v in metrics.items()}
+            for p in SUMMARY_PERCENTILES
         },
-        "mins": {
-            key: min(numbers)
-            for key, numbers in metric_values.items()
-        },
-        "maxs": {
-            key: max(numbers)
-            for key, numbers in metric_values.items()
-        },
+        "mins": {k: min(v) for k, v in metrics.items()},
+        "maxs": {k: max(v) for k, v in metrics.items()},
     }
 
 
