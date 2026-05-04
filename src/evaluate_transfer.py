@@ -20,6 +20,13 @@ BERTSCORE_KEYS = (
     "bertscore_f1",
 )
 SUMMARY_PERCENTILES = (25, 75, 90)
+METRIC_PERCENTILES = {
+    "median": 50,
+    "p05": 5,
+    "p10": 10,
+    "p90": 90,
+    "p95": 95,
+}
 
 
 def parse_args():
@@ -32,6 +39,8 @@ def parse_args():
     parser.add_argument("--skip-semantic", action="store_true")
     parser.add_argument("--skip-bertscore", action="store_true")
     parser.add_argument("--device", choices=["auto", "cpu", "cuda"], default="auto")
+    parser.add_argument("--semantic-top-k", type=int, default=5)
+    parser.add_argument("--max-new-tokens", type=int, default=None)
     return parser.parse_args()
 
 
@@ -48,8 +57,14 @@ def tokenize(text):
     return TOKEN_RE.findall(str(text).lower())
 
 
+def metric_delta(attack_value, clean_value):
+    if attack_value is None or clean_value is None:
+        return None
+    return attack_value - clean_value
+
+
 def delta_metrics(attack, clean):
-    return {key: attack[key] - clean[key] for key in clean}
+    return {key: metric_delta(attack[key], clean[key]) for key in clean}
 
 
 def flatten_metrics(metrics, prefix=""):
@@ -70,6 +85,68 @@ def percentile(values, percentile_value):
     return sorted_values[lower] * (1 - weight) + sorted_values[upper] * weight
 
 
+def distribution_summary(values):
+    values = list(values)
+    if not values:
+        return {"mean": None, **{key: None for key in METRIC_PERCENTILES}}
+
+    return {
+        "mean": mean(values),
+        **{
+            key: percentile(values, percentile_value)
+            for key, percentile_value in METRIC_PERCENTILES.items()
+        },
+    }
+
+
+def ratio(numerator, denominator):
+    if numerator is None or denominator is None or denominator == 0:
+        return None
+    return numerator / denominator
+
+
+def load_metadata(result_file):
+    metadata_path = result_file.parent / "metadata.json"
+    if not metadata_path.exists():
+        return {}
+
+    with metadata_path.open("r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def resolve_max_token_cap(metadata, result, sample, cli_max_new_tokens=None):
+    cap_sources = [
+        ("sample.adv.completion_token_cap", sample["adv"].get("completion_token_cap")),
+        ("result.completion_token_cap", result.get("completion_token_cap")),
+        ("result.max_new_tokens", result.get("max_new_tokens")),
+        (
+            "metadata.generation_config.max_new_tokens",
+            metadata.get("generation_config", {}).get("max_new_tokens"),
+        ),
+        ("cli.max_new_tokens", cli_max_new_tokens),
+    ]
+    for source, value in cap_sources:
+        if value is not None:
+            cap = int(value)
+            if cap > 0:
+                return cap, source
+    return None, "none"
+
+
+def args_metadata(args):
+    return {
+        key: str(value) if isinstance(value, Path) else value
+        for key, value in vars(args).items()
+    }
+
+
+def effective_top_k_metadata(values):
+    values = sorted(values)
+    if not values:
+        return None
+    return values[0] if len(values) == 1 else values
+
+
 class RepetitionScorer:
     def __init__(self, ngrams=REPETITION_NGRAMS):
         self.ngrams = ngrams
@@ -85,10 +162,15 @@ class RepetitionScorer:
         return 1.0 - (len(counts) / total) if total else 0.0
 
     def score(self, texts_tokens):
-        return {
-            f"rep_{n}": mean([self.rep_n(tokens, n) for tokens in texts_tokens])
-            for n in self.ngrams
-        }
+        scores = {}
+        for n in self.ngrams:
+            values = [self.rep_n(tokens, n) for tokens in texts_tokens]
+            summary = distribution_summary(values)
+            scores[f"rep_{n}"] = summary["mean"]
+            scores[f"rep_{n}_median"] = summary["median"]
+            scores[f"rep_{n}_p90"] = summary["p90"]
+            scores[f"rep_{n}_p95"] = summary["p95"]
+        return scores
 
     def evaluate(self, clean_tokens, attack_tokens):
         clean_repetition = self.score(clean_tokens)
@@ -101,16 +183,63 @@ class RepetitionScorer:
 
 
 class LengthScorer:
-    def evaluate(self, clean_tokens, attack_tokens):
+    @staticmethod
+    def lengths(sample_block, tokens):
+        if "length" in sample_block:
+            return sample_block["length"]
+        return [len(row) for row in tokens]
+
+    def evaluate(self, sample, clean_tokens, attack_tokens, max_token_cap, cap_source):
+        clean_lengths = self.lengths(sample["baseline"], clean_tokens)
+        attack_lengths = self.lengths(sample["adv"], attack_tokens)
         ratios = [
-            len(attack) / len(clean)
-            for clean, attack in zip(clean_tokens, attack_tokens, strict=True)
+            ratio(attack, clean)
+            for clean, attack in zip(clean_lengths, attack_lengths, strict=True)
         ]
-        return {"length_ratio": mean(ratios)}
+        ratios = [value for value in ratios if value is not None]
+        clean_summary = distribution_summary(clean_lengths)
+        attack_summary = distribution_summary(attack_lengths)
+
+        max_token_hit_count = None
+        max_token_hit_rate = None
+        if max_token_cap is not None:
+            max_token_hit_count = sum(
+                length >= max_token_cap - 5 for length in attack_lengths
+            )
+            max_token_hit_rate = ratio(max_token_hit_count, len(attack_lengths))
+
+        return {
+            "length_ratio": mean(ratios) if ratios else None,
+            "clean_len_median": clean_summary["median"],
+            "clean_len_p90": clean_summary["p90"],
+            "clean_len_p95": clean_summary["p95"],
+            "adv_len_median": attack_summary["median"],
+            "adv_len_p90": attack_summary["p90"],
+            "adv_len_p95": attack_summary["p95"],
+            "median_len_ratio": ratio(
+                attack_summary["median"], clean_summary["median"]
+            ),
+            "tail_len_ratio_p90": ratio(
+                attack_summary["p90"], clean_summary["p90"]
+            ),
+            "tail_len_ratio_p95": ratio(
+                attack_summary["p95"], clean_summary["p95"]
+            ),
+            "tail_vs_clean_median_ratio_p90": ratio(
+                attack_summary["p90"], clean_summary["median"]
+            ),
+            "tail_vs_clean_median_ratio_p95": ratio(
+                attack_summary["p95"], clean_summary["median"]
+            ),
+            "max_token_cap": max_token_cap,
+            "max_token_cap_source": cap_source,
+            "max_token_hit_count": max_token_hit_count,
+            "max_token_hit_rate": max_token_hit_rate,
+        }
 
 
 class SemanticScorer:
-    def __init__(self, device="auto", use_bertscore=True):
+    def __init__(self, device="auto", use_bertscore=True, semantic_top_k=5):
         import torch
         from sentence_transformers import SentenceTransformer
         from transformers.utils import logging as transformers_logging
@@ -119,6 +248,9 @@ class SemanticScorer:
             device = "cuda" if torch.cuda.is_available() else "cpu"
         transformers_logging.set_verbosity_error()
         self.device = device
+        self.semantic_top_k = semantic_top_k
+        self.effective_clean_to_clean_top_k_values = set()
+        self.effective_adv_to_clean_top_k_values = set()
         self.embedding_model_name = EMBEDDING_MODEL
         self.bertscore_model_name = DEFAULT_BERTSCORE_MODEL if use_bertscore else None
         self.embedding_model = SentenceTransformer(
@@ -184,6 +316,11 @@ class SemanticScorer:
             "delta": delta_metrics(clean_adv_cross, clean_intra),
         }
 
+    @staticmethod
+    def cosine_score_from_values(values):
+        summary = distribution_summary(values)
+        return {"embedding_cosine": summary["mean"], **summary}
+
     def encode(self, texts):
         return self.embedding_model.encode(
             texts,
@@ -194,26 +331,86 @@ class SemanticScorer:
 
     @staticmethod
     def cosine_score(scores):
-        return {"embedding_cosine": scores.clamp(-1, 1).mean().item()}
+        values = scores.clamp(-1, 1).detach().cpu().tolist()
+        return SemanticScorer.cosine_score_from_values(values)
 
     def intra_cosine(self, embeddings):
-        pair_count = len(embeddings) * (len(embeddings) - 1) / 2
         similarities = (embeddings @ embeddings.T).clamp(-1, 1)
-        return {
-            "embedding_cosine": (
-                similarities.triu(diagonal=1).sum() / pair_count
-            ).item()
-        }
+        values = [
+            similarities[i, j].item()
+            for i in range(len(embeddings))
+            for j in range(i + 1, len(embeddings))
+        ]
+        return self.cosine_score_from_values(values)
 
     def cross_cosine(self, source_embeddings, target_embeddings):
         return self.cosine_score((source_embeddings @ target_embeddings.T).flatten())
 
     def cosine(self, clean_embeddings, attack_embeddings):
-        return self.score_block(
+        block = self.score_block(
             self.intra_cosine(clean_embeddings),
             self.intra_cosine(attack_embeddings),
             self.cross_cosine(clean_embeddings, attack_embeddings),
         )
+        block["delta"].update(
+            {
+                f"semantic_shift_{key}": block["delta"][key]
+                for key in ("mean", *METRIC_PERCENTILES.keys())
+            }
+        )
+        block.update(self.semantic_outliers(clean_embeddings, attack_embeddings))
+        return block
+
+    def semantic_outliers(self, clean_embeddings, attack_embeddings):
+        clean_count = len(clean_embeddings)
+        attack_count = len(attack_embeddings)
+        effective_k = min(self.semantic_top_k, clean_count - 1)
+        empty = {
+            "clean_to_clean_topk_p05": None,
+            **{
+                f"adv_to_clean_topk_mean_{key}": None
+                for key in ("mean", *METRIC_PERCENTILES.keys())
+            },
+            "semantic_outlier_count": None,
+            "semantic_outlier_rate": None,
+        }
+        if effective_k <= 0:
+            return empty
+
+        self.effective_clean_to_clean_top_k_values.add(effective_k)
+        clean_similarities = (clean_embeddings @ clean_embeddings.T).clamp(-1, 1)
+        clean_topk_means = []
+        for index in range(clean_count):
+            candidates = [
+                clean_similarities[index, other].item()
+                for other in range(clean_count)
+                if other != index
+            ]
+            topk_candidates = sorted(candidates, reverse=True)[:effective_k]
+            clean_topk_means.append(mean(topk_candidates))
+
+        threshold = percentile(clean_topk_means, 5)
+        adv_effective_k = min(self.semantic_top_k, clean_count)
+        self.effective_adv_to_clean_top_k_values.add(adv_effective_k)
+        cross_similarities = (attack_embeddings @ clean_embeddings.T).clamp(-1, 1)
+        adv_topk_means = []
+        for index in range(attack_count):
+            candidates = cross_similarities[index].detach().cpu().tolist()
+            adv_topk_means.append(
+                mean(sorted(candidates, reverse=True)[:adv_effective_k])
+            )
+
+        adv_summary = distribution_summary(adv_topk_means)
+        outlier_count = sum(value < threshold for value in adv_topk_means)
+        return {
+            "clean_to_clean_topk_p05": threshold,
+            **{
+                f"adv_to_clean_topk_mean_{key}": value
+                for key, value in adv_summary.items()
+            },
+            "semantic_outlier_count": outlier_count,
+            "semantic_outlier_rate": ratio(outlier_count, attack_count),
+        }
 
     @staticmethod
     def bertscore_scores(scores, start, end):
@@ -253,11 +450,25 @@ class SemanticScorer:
         }
 
 
-def evaluate_sample(sample, repetition_scorer, length_scorer, semantic_scorer):
+def evaluate_sample(
+    sample,
+    result,
+    metadata,
+    repetition_scorer,
+    length_scorer,
+    semantic_scorer,
+    cli_max_new_tokens=None,
+):
     clean_texts = sample["baseline"]["answer"]
     attack_texts = sample["adv"]["answer"]
     clean_tokens = [tokenize(text) for text in clean_texts]
     attack_tokens = [tokenize(text) for text in attack_texts]
+    max_token_cap, cap_source = resolve_max_token_cap(
+        metadata,
+        result,
+        sample,
+        cli_max_new_tokens,
+    )
 
     return {
         "source": sample["source"],
@@ -269,7 +480,13 @@ def evaluate_sample(sample, repetition_scorer, length_scorer, semantic_scorer):
             if semantic_scorer
             else SemanticScorer.empty_scores_block()
         ),
-        "length": length_scorer.evaluate(clean_tokens, attack_tokens),
+        "length": length_scorer.evaluate(
+            sample,
+            clean_tokens,
+            attack_tokens,
+            max_token_cap,
+            cap_source,
+        ),
     }
 
 
@@ -278,7 +495,8 @@ def summarize_items(items):
     for item in items:
         metrics = {key: item[key] for key in ("repetition", "semantic", "length")}
         for key, value in flatten_metrics(metrics):
-            values[key].append(value)
+            if value is not None and isinstance(value, (int, float)):
+                values[key].append(value)
 
     metric_values = {
         key: numbers for key, numbers in sorted(values.items()) if numbers
@@ -315,7 +533,7 @@ def summarize_items(items):
     }
 
 
-def semantic_metadata(semantic_scorer):
+def semantic_metadata(semantic_scorer, semantic_top_k):
     return {
         "enabled": semantic_scorer is not None,
         "embedding_model": semantic_scorer.embedding_model_name
@@ -325,14 +543,38 @@ def semantic_metadata(semantic_scorer):
         if semantic_scorer
         else None,
         "device": semantic_scorer.device if semantic_scorer else None,
+        "semantic_top_k": semantic_top_k,
+        "effective_clean_to_clean_top_k": effective_top_k_metadata(
+            semantic_scorer.effective_clean_to_clean_top_k_values
+        )
+        if semantic_scorer
+        else None,
+        "effective_adv_to_clean_top_k": effective_top_k_metadata(
+            semantic_scorer.effective_adv_to_clean_top_k_values
+        )
+        if semantic_scorer
+        else None,
+    }
+
+
+def evaluation_metadata(args, metadata):
+    return {
+        "args": args_metadata(args),
+        "input_metadata_path": str(args.result_file.parent / "metadata.json"),
+        "input_metadata": metadata,
     }
 
 
 def main():
     args = parse_args()
+    if args.semantic_top_k <= 0:
+        raise ValueError("--semantic-top-k must be positive")
+    if args.max_new_tokens is not None and args.max_new_tokens <= 0:
+        raise ValueError("--max-new-tokens must be positive")
 
     with args.result_file.open("r", encoding="utf-8") as f:
         result = json.load(f)
+    metadata = load_metadata(args.result_file)
 
     samples = result["samples"]
     if args.limit:
@@ -343,10 +585,22 @@ def main():
     semantic_scorer = (
         None
         if args.skip_semantic
-        else SemanticScorer(args.device, use_bertscore=not args.skip_bertscore)
+        else SemanticScorer(
+            args.device,
+            use_bertscore=not args.skip_bertscore,
+            semantic_top_k=args.semantic_top_k,
+        )
     )
     items = [
-        evaluate_sample(sample, repetition_scorer, length_scorer, semantic_scorer)
+        evaluate_sample(
+            sample,
+            result,
+            metadata,
+            repetition_scorer,
+            length_scorer,
+            semantic_scorer,
+            args.max_new_tokens,
+        )
         for sample in tqdm(samples, desc="Evaluating samples")
     ]
 
@@ -354,7 +608,8 @@ def main():
         "metric_version": "degeneration-v2-oop",
         "input_path": str(args.result_file),
         "schema": "transfer",
-        "semantic": semantic_metadata(semantic_scorer),
+        "evaluation_metadata": evaluation_metadata(args, metadata),
+        "semantic": semantic_metadata(semantic_scorer, args.semantic_top_k),
         "source_metadata": {
             key: value for key, value in result.items() if key != "samples"
         },
