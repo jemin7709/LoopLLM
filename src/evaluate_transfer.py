@@ -307,7 +307,7 @@ class SemanticScorer:
             convert_to_tensor=True,
             normalize_embeddings=True,
             show_progress_bar=False,
-        )
+        ).float()
 
     @staticmethod
     def cosine_score(scores):
