@@ -5,6 +5,8 @@ import sys
 from pathlib import Path
 from typing import Optional
 
+import numpy as np
+
 SUCCESS_THRESHOLD = 0.125
 
 
@@ -41,7 +43,7 @@ def get_output_path(result_dir: Path, output_root: Optional[Path] = None) -> Pat
 
 def process_result_files(files):
     successful_attacks = 0
-    total_avg_len = 0.0
+    lengths = []
 
     for path in files:
         with open(path, "r", encoding="utf-8") as f:
@@ -52,14 +54,23 @@ def process_result_files(files):
 
         if float(last_row["success_rate"]) >= SUCCESS_THRESHOLD:
             successful_attacks += 1
-        total_avg_len += float(last_row["avg_len"])
+        lengths.append(float(last_row["avg_len"]))
 
     total_files = len(files)
+    mean_len = sum(lengths) / total_files
+    p25_len, median_len, p75_len = [
+        float(value) for value in np.percentile(lengths, [25, 50, 75])
+    ]
+
     return {
         "files": total_files,
         "successful_attacks": successful_attacks,
-        "average_asr": successful_attacks / total_files if total_files else 0.0,
-        "average_avg_len": total_avg_len / total_files if total_files else 0.0,
+        "average_asr": successful_attacks / total_files,
+        "average_avg_len": mean_len,
+        "mean_len": mean_len,
+        "median_len": median_len,
+        "p25_len": p25_len,
+        "p75_len": p75_len,
     }
 
 
@@ -69,6 +80,10 @@ def print_summary(result_dir, summary):
     print(f"Successful Attacks: {summary['successful_attacks']}")
     print(f"Average ASR: {summary['average_asr']:.4f}")
     print(f"Average Avg-len: {summary['average_avg_len']:.4f}")
+    print(f"Mean Len: {summary['mean_len']:.4f}")
+    print(f"Median Len: {summary['median_len']:.4f}")
+    print(f"P25 Len: {summary['p25_len']:.4f}")
+    print(f"P75 Len: {summary['p75_len']:.4f}")
 
 
 def main():
