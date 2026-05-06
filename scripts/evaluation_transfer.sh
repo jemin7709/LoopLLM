@@ -22,7 +22,7 @@ run_gpu() {
       output_file="$transfer_dir/evaluation/${result_file#"$transfer_dir"/}"
 
       log "[INFO] GPU=${gpu} input=${result_file} output=${output_file}"
-      if CUDA_VISIBLE_DEVICES="$gpu" uv run python src/evaluate_transfer.py "$result_file" --output "$output_file" --skip-bertscore; then
+      if CUDA_VISIBLE_DEVICES="$gpu" uv run python src/evaluate_transfer.py "$result_file" --output "$output_file"; then
         log "[SUCCESS] GPU=${gpu} input=${result_file}"
       else
         local status=$?
