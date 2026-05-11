@@ -291,7 +291,7 @@ def choose_suffix(
             return_ids=True,
         )
         prompt_losses = get_prompt_losses(args, runtime, states, candidate_ids)
-        group_losses = sum(prompt_losses)
+        group_losses = torch.stack(prompt_losses).mean(dim=0)
         best_index = int(group_losses.argmin().item())
         return (
             candidate_suffixes[best_index],
@@ -308,9 +308,14 @@ def sum_gradients(
     total_grad = None
     for state in states:
         input_ids = state.suffix_manager.get_input_ids().to(device)
-        grad = compute_prompt_gradient(model, input_ids, state.suffix_manager)
+        grad = compute_prompt_gradient(
+            model,
+            input_ids,
+            state.suffix_manager,
+            normalize=False,
+        )
         total_grad = grad if total_grad is None else total_grad + grad
-    return total_grad
+    return total_grad / total_grad.norm(dim=-1, keepdim=True)
 
 
 def get_prompt_losses(
@@ -323,7 +328,7 @@ def get_prompt_losses(
         get_all_losses(
             runtime.model,
             runtime.tokenizer,
-            state.suffix_manager.get_input_ids(),
+            state.suffix_manager.get_input_ids().to(runtime.device),
             candidate_ids,
             state.suffix_manager,
             batch_size=args.once_forward_batch,
@@ -491,6 +496,7 @@ def compute_prompt_gradient(
     model,
     input_ids: torch.Tensor,
     suffix_manager: SuffixManager,
+    normalize: bool = True,
 ) -> torch.Tensor:
     control_slice = suffix_manager._control_slice
     target_slice = suffix_manager._target_slice
@@ -522,7 +528,8 @@ def compute_prompt_gradient(
     loss.backward(retain_graph=False)
 
     grad = one_hot.grad.clone()
-    grad = grad / grad.norm(dim=-1, keepdim=True)
+    if normalize:
+        grad = grad / grad.norm(dim=-1, keepdim=True)
     one_hot.grad.zero_()
     model.zero_grad(set_to_none=True)
     return grad
