@@ -114,7 +114,8 @@ class ColocatedRuntime:
 
 
 def run_attack(args: argparse.Namespace, runtime: ColocatedRuntime) -> None:
-    data = read_data(args.data_name, length=args.limit)
+    data = read_data(args.data_name, length=args.end_index or args.limit)
+    data = data[args.start_index : args.end_index]
     save_dir = Path(args.save_dir)
     save_dir.mkdir(parents=True, exist_ok=True)
 
@@ -126,7 +127,8 @@ def run_attack(args: argparse.Namespace, runtime: ColocatedRuntime) -> None:
     not_allowed_tokens = get_nonascii_toks(runtime.tokenizer, runtime.device)
 
     for group_id, dataset_indices in prompt_chunks(data, args.prompt_batch_size):
-        logger.info("========== group %s / indices %s ==========", group_id, dataset_indices)
+        global_indices = [args.start_index + index for index in dataset_indices]
+        logger.info("========== group %s / indices %s ==========", group_id, global_indices)
         states = initialize_group(
             args,
             runtime,
@@ -162,7 +164,7 @@ def initialize_group(
             args,
             runtime,
             data[dataset_index],
-            dataset_index,
+            args.start_index + dataset_index,
             group_id,
             len(dataset_indices),
             initial_suffix,
@@ -608,6 +610,8 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["sharegpt", "alpaca", "all", "math", "math_test", "math_train"],
     )
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument("--start_index", type=int, default=0)
+    parser.add_argument("--end_index", type=int, default=None)
     parser.add_argument("--adv_len", type=int, default=30)
     parser.add_argument("--steps", type=int, default=20)
     parser.add_argument("--topk", type=int, default=64)
