@@ -590,7 +590,8 @@ def generation_config_to_metadata(generation_config) -> dict[str, Any]:
 
 
 def save_metadata(args: argparse.Namespace, runtime: ColocatedRuntime) -> None:
-    metadata_path = Path(args.save_dir) / "metadata.json"
+    metadata_name = f"metadata_{args.start_index}_{args.end_index or args.limit}.json"
+    metadata_path = Path(args.save_dir) / metadata_name
     metadata_path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "args": vars(args),
