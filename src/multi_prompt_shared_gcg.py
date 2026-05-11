@@ -235,12 +235,14 @@ def optimize_group(
 
         evaluations = None
         group_success_rate = 0.0
+        ever_group_success_rate = get_ever_group_success_rate(states)
         if should_evaluate(args, step):
             runtime.activate_vllm()
             evaluations = evaluate_group(args, runtime, states)
             runtime.activate_hf()
             annotate_success(args, runtime, states, evaluations, step)
             group_success_rate = get_group_success_rate(evaluations)
+            ever_group_success_rate = get_ever_group_success_rate(states)
 
         duration = time.time() - start_time
         for index, state in enumerate(states):
@@ -250,6 +252,7 @@ def optimize_group(
                 current_losses[index],
                 group_current_loss,
                 group_success_rate,
+                ever_group_success_rate,
                 evaluation,
                 duration,
             )
@@ -414,6 +417,11 @@ def get_group_success_rate(evaluations: list[dict[str, Any]]) -> float:
     return successful_prompts / len(evaluations)
 
 
+def get_ever_group_success_rate(states: list[PromptState]) -> float:
+    successful_prompts = sum(state.first_success_step is not None for state in states)
+    return successful_prompts / len(states)
+
+
 def initial_record(
     state: PromptState,
     baseline_result: dict[str, Any],
@@ -431,6 +439,7 @@ def initial_record(
         "group_id": state.group_id,
         "group_size": state.group_size,
         "group_success_rate": 0.0,
+        "ever_group_success_rate": 0.0,
         "group_current_loss": 0.0,
         "evaluated": True,
         "success": False,
@@ -445,6 +454,7 @@ def step_record(
     current_loss: float,
     group_current_loss: float,
     group_success_rate: float,
+    ever_group_success_rate: float,
     evaluation: dict[str, Any] | None,
     duration: float,
 ) -> dict[str, Any]:
@@ -469,6 +479,7 @@ def step_record(
             "group_id": state.group_id,
             "group_size": state.group_size,
             "group_success_rate": group_success_rate,
+            "ever_group_success_rate": ever_group_success_rate,
             "group_current_loss": group_current_loss,
             "evaluated": evaluated,
             "success": evaluation["success"] if evaluation is not None else False,
@@ -593,7 +604,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--prompt_batch_size", type=int, default=4)
     parser.add_argument("--sample_times", type=int, default=16)
     parser.add_argument("--prompt_success_rate_threshold", type=float, default=0.125)
-    parser.add_argument("--success_rate_threshold", type=float, default=0.9)
+    parser.add_argument("--success_rate_threshold", type=float, default=0.5)
     parser.add_argument("--vllm_sleep_level", type=int, default=1, choices=[1])
     parser.add_argument("--vllm_gpu_memory_utilization", type=float, default=0.35)
     return parser
