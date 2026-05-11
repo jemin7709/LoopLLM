@@ -53,7 +53,7 @@ class PromptState:
 class ColocatedRuntime:
     def __init__(self, args: argparse.Namespace):
         if not torch.cuda.is_available():
-            raise RuntimeError("multi_prompt_colocate_gcg.py requires CUDA")
+            raise RuntimeError("multi_prompt_shared_gcg.py requires CUDA")
 
         from vllm import LLM
 
@@ -596,7 +596,7 @@ def parse_args() -> argparse.Namespace:
     args = build_parser().parse_args()
     args.save_dir = os.path.join(
         args.root_dir,
-        f"{args.model_name}_{args.data_name}_multi_prompt_b{args.prompt_batch_size}_s{args.seed}",
+        f"{args.model_name}_{args.data_name}_multi_prompt_shared_gcg_b{args.prompt_batch_size}_s{args.seed}",
     )
     return args
 
