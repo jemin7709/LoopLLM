@@ -24,6 +24,7 @@ from utils import (
     get_all_losses,
     get_filtered_cands,
     get_nonascii_toks,
+    is_entropy_low,
     load_model_and_tokenizer,
     read_data,
     sample_control,
@@ -38,11 +39,11 @@ logger = logging.getLogger(__name__)
 class PromptState:
     dataset_index: int
     group_id: int
-    group_indices: list[int]
-    prompt_position: int
+    group_size: int
     prompt: str
     suffix_manager: SuffixManager
     results: dict[int, dict[str, Any]]
+    first_success_step: int | None = None
 
     @property
     def adv_prompt(self) -> str:
@@ -124,14 +125,14 @@ def run_attack(args: argparse.Namespace, runtime: ColocatedRuntime) -> None:
     runtime.activate_hf()
     not_allowed_tokens = get_nonascii_toks(runtime.tokenizer, runtime.device)
 
-    for group_id, group_indices in prompt_chunks(data, args.prompt_batch_size):
-        logger.info("========== group %s / indices %s ==========", group_id, group_indices)
+    for group_id, dataset_indices in prompt_chunks(data, args.prompt_batch_size):
+        logger.info("========== group %s / indices %s ==========", group_id, dataset_indices)
         states = initialize_group(
             args,
             runtime,
             data,
             group_id,
-            group_indices,
+            dataset_indices,
             initial_suffix,
             initial_token_id,
             save_dir,
@@ -142,8 +143,8 @@ def run_attack(args: argparse.Namespace, runtime: ColocatedRuntime) -> None:
 
 def prompt_chunks(data: list[str], batch_size: int):
     for start in range(0, len(data), batch_size):
-        group_indices = list(range(start, min(start + batch_size, len(data))))
-        yield start // batch_size, group_indices
+        dataset_indices = list(range(start, min(start + batch_size, len(data))))
+        yield start // batch_size, dataset_indices
 
 
 def initialize_group(
@@ -151,7 +152,7 @@ def initialize_group(
     runtime: ColocatedRuntime,
     data: list[str],
     group_id: int,
-    group_indices: list[int],
+    dataset_indices: list[int],
     initial_suffix: str,
     initial_token_id: int,
     save_dir: Path,
@@ -163,12 +164,11 @@ def initialize_group(
             data[dataset_index],
             dataset_index,
             group_id,
-            group_indices,
-            prompt_position,
+            len(dataset_indices),
             initial_suffix,
             initial_token_id,
         )
-        for prompt_position, dataset_index in enumerate(group_indices)
+        for dataset_index in dataset_indices
     ]
 
     runtime.activate_vllm()
@@ -190,8 +190,7 @@ def make_prompt_state(
     prompt: str,
     dataset_index: int,
     group_id: int,
-    group_indices: list[int],
-    prompt_position: int,
+    group_size: int,
     initial_suffix: str,
     initial_token_id: int,
 ) -> PromptState:
@@ -207,8 +206,7 @@ def make_prompt_state(
     return PromptState(
         dataset_index=dataset_index,
         group_id=group_id,
-        group_indices=group_indices,
-        prompt_position=prompt_position,
+        group_size=group_size,
         prompt=prompt,
         suffix_manager=suffix_manager,
         results={},
@@ -240,8 +238,9 @@ def optimize_group(
         if should_evaluate(args, step):
             runtime.activate_vllm()
             evaluations = evaluate_group(args, runtime, states)
-            group_success_rate = get_group_success_rate(evaluations)
             runtime.activate_hf()
+            annotate_success(args, runtime, states, evaluations, step)
+            group_success_rate = get_group_success_rate(evaluations)
 
         duration = time.time() - start_time
         for index, state in enumerate(states):
@@ -254,8 +253,6 @@ def optimize_group(
                 evaluation,
                 duration,
             )
-            if evaluation:
-                state.suffix_manager.update(answer=evaluation["answer"])
             save_state(save_dir, state)
 
         if group_success_rate >= args.success_rate_threshold:
@@ -386,8 +383,29 @@ def summarize_request_output(max_new_tokens: int, request_output) -> dict[str, A
     }
 
 
+def annotate_success(
+    args: argparse.Namespace,
+    runtime: ColocatedRuntime,
+    states: list[PromptState],
+    evaluations: list[dict[str, Any]],
+    step: int,
+) -> None:
+    for state, evaluation in zip(states, evaluations):
+        state.suffix_manager.update(answer=evaluation["answer"])
+        output_cap_hit = evaluation["success_rate"] >= args.prompt_success_rate_threshold
+        entropy_low = False
+        if output_cap_hit:
+            input_ids = state.suffix_manager.get_input_ids().to(runtime.device).unsqueeze(0)
+            entropy_low = is_entropy_low(runtime.model, input_ids)
+        success = output_cap_hit and entropy_low
+        evaluation["entropy_low"] = entropy_low
+        evaluation["success"] = success
+        if success and state.first_success_step is None:
+            state.first_success_step = step
+
+
 def get_group_success_rate(evaluations: list[dict[str, Any]]) -> float:
-    successful_prompts = sum(evaluation["success_rate"] > 0.5 for evaluation in evaluations)
+    successful_prompts = sum(evaluation["success"] for evaluation in evaluations)
     return successful_prompts / len(evaluations)
 
 
@@ -401,18 +419,18 @@ def initial_record(
         "baseline_answer": baseline_result["answer"],
         "baseline_output_len": baseline_result["avg_len"],
         "prompt": state.adv_prompt,
+        "answer": initial_result["answer"],
+        "output_len": initial_result["avg_len"],
         "adv_suffix": state.suffix_manager.adv_suffix,
         "adv_prompt": state.adv_prompt,
-        "answer": initial_result["answer"],
-        "answers": initial_result["answers"],
-        "output_len": initial_result["avg_len"],
-        "output_lengths": initial_result["output_lengths"],
         "group_id": state.group_id,
-        "group_indices": state.group_indices,
-        "prompt_position": state.prompt_position,
+        "group_size": state.group_size,
         "group_success_rate": 0.0,
         "group_current_loss": 0.0,
         "evaluated": True,
+        "success": False,
+        "entropy_low": False,
+        "first_success_step": state.first_success_step,
         "time": 0.0,
     }
 
@@ -426,33 +444,34 @@ def step_record(
     duration: float,
 ) -> dict[str, Any]:
     evaluated = evaluation is not None
-    if evaluation is None:
-        evaluation = {
-            "answer": "",
-            "answers": [],
-            "output_lengths": [],
-            "success_rate": 0.0,
-            "avg_len": 0.0,
-        }
-
-    return {
+    record = {
         "prompt": state.prompt,
         "adv_suffix": state.suffix_manager.adv_suffix,
         "adv_prompt": state.adv_prompt,
         "current_losses": current_loss,
-        "answer": evaluation["answer"],
-        "answers": evaluation["answers"],
-        "output_lengths": evaluation["output_lengths"],
-        "success_rate": evaluation["success_rate"],
-        "avg_len": evaluation["avg_len"],
-        "time": duration,
-        "group_id": state.group_id,
-        "group_indices": state.group_indices,
-        "prompt_position": state.prompt_position,
-        "group_success_rate": group_success_rate,
-        "group_current_loss": group_current_loss,
-        "evaluated": evaluated,
     }
+    if evaluation is not None:
+        record.update(
+            {
+                "answer": evaluation["answer"],
+                "success_rate": evaluation["success_rate"],
+                "avg_len": evaluation["avg_len"],
+            }
+        )
+    record.update(
+        {
+            "time": duration,
+            "group_id": state.group_id,
+            "group_size": state.group_size,
+            "group_success_rate": group_success_rate,
+            "group_current_loss": group_current_loss,
+            "evaluated": evaluated,
+            "success": evaluation["success"] if evaluation is not None else False,
+            "entropy_low": evaluation["entropy_low"] if evaluation is not None else False,
+            "first_success_step": state.first_success_step,
+        }
+    )
+    return record
 
 
 def save_state(save_dir: Path, state: PromptState) -> None:
@@ -566,6 +585,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--seed", type=int, default=23)
     parser.add_argument("--prompt_batch_size", type=int, default=4)
     parser.add_argument("--sample_times", type=int, default=16)
+    parser.add_argument("--prompt_success_rate_threshold", type=float, default=0.125)
     parser.add_argument("--success_rate_threshold", type=float, default=0.9)
     parser.add_argument("--vllm_sleep_level", type=int, default=1, choices=[1])
     parser.add_argument("--vllm_gpu_memory_utilization", type=float, default=0.35)

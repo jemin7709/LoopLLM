@@ -41,6 +41,29 @@ def get_output_path(result_dir: Path, output_root: Optional[Path] = None) -> Pat
     return out_dir / "aggregated_results.json"
 
 
+def latest_evaluated_row(data):
+    for key in sorted(data.keys(), key=int, reverse=True):
+        row = data[key]
+        if row.get("evaluated", True):
+            return row
+    last_key = max(data.keys(), key=int)
+    return data[last_key]
+
+
+def prompt_success(row):
+    if "success" in row:
+        return bool(row["success"])
+    if "success_rate" in row:
+        return float(row["success_rate"]) >= SUCCESS_THRESHOLD
+    raise KeyError("success or success_rate")
+
+
+def prompt_avg_len(row):
+    if "avg_len" in row:
+        return float(row["avg_len"])
+    raise KeyError("avg_len")
+
+
 def process_result_files(files):
     successful_attacks = 0
     lengths = []
@@ -49,12 +72,11 @@ def process_result_files(files):
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        last_key = max(data.keys(), key=int)
-        last_row = data[last_key]
+        last_row = latest_evaluated_row(data)
 
-        if float(last_row["success_rate"]) >= SUCCESS_THRESHOLD:
+        if prompt_success(last_row):
             successful_attacks += 1
-        lengths.append(float(last_row["avg_len"]))
+        lengths.append(prompt_avg_len(last_row))
 
     total_files = len(files)
     mean_len = sum(lengths) / total_files
