@@ -11,6 +11,7 @@ from typing import Any
 
 ANSWER_PATTERN = re.compile(r"(?i)Answer\s*:\s*([^\n]+)")
 DEFAULT_JUDGE_MODEL = "google/gemma-4-31B-it"
+JUDGE_MAX_MODEL_LEN = 4096
 JsonDict = dict[str, Any]
 
 EQUALITY_TEMPLATE = r"""
@@ -92,7 +93,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=23)
     parser.add_argument("--judge_model", default=DEFAULT_JUDGE_MODEL)
     parser.add_argument("--judge_tensor_parallel_size", type=int, default=1)
-    parser.add_argument("--judge_gpu_memory_utilization", type=float, default=0.9)
+    parser.add_argument("--judge_gpu_memory_utilization", type=float, default=0.95)
     return parser.parse_args()
 
 
@@ -204,6 +205,7 @@ def judge_equal(
         trust_remote_code=True,
         tensor_parallel_size=tensor_parallel_size,
         gpu_memory_utilization=gpu_memory_utilization,
+        max_model_len=JUDGE_MAX_MODEL_LEN,
     )
     sampling_params = SamplingParams(temperature=0.0, max_tokens=1024)
     prompts = [

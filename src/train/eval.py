@@ -18,6 +18,8 @@ DEFAULT_ADAPTER = Path(
     "outputs/qwen3-0.6b-dpo-train95-val5-lr5e-6-b0.1-l4096-20260519-172427/checkpoint-best"
 )
 DEFAULT_CHECKER_MODEL = "google/gemma-4-31B-it"
+DEFAULT_CHECKER_MAX_MODEL_LEN = 4096
+DEFAULT_CHECKER_GPU_MEMORY_UTILIZATION = 0.95
 
 ANSWER_PATTERN = re.compile(r"(?i)Answer\s*:\s*([^\n]+)")
 JsonDict = dict[str, Any]
@@ -87,7 +89,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model_name_or_path", default=DEFAULT_MODEL)
     parser.add_argument("--adapter_path", type=Path, default=DEFAULT_ADAPTER)
     parser.add_argument("--no_adapter", action="store_true")
-    parser.add_argument("--split", choices=["math_test", "math_train"], default="math_test")
+    parser.add_argument(
+        "--split", choices=["math_test", "math_train"], default="math_test"
+    )
     parser.add_argument("--dataset_path", type=Path)
     parser.add_argument("--attack_result_dir", type=Path)
     parser.add_argument("--output_dir", type=Path)
@@ -105,6 +109,14 @@ def parse_args() -> argparse.Namespace:
         "--equality_checker_model",
         dest="checker_model",
         default=DEFAULT_CHECKER_MODEL,
+    )
+    parser.add_argument(
+        "--checker_max_model_len", type=int, default=DEFAULT_CHECKER_MAX_MODEL_LEN
+    )
+    parser.add_argument(
+        "--checker_gpu_memory_utilization",
+        type=float,
+        default=DEFAULT_CHECKER_GPU_MEMORY_UTILIZATION,
     )
     return parser.parse_args()
 
@@ -124,7 +136,9 @@ def extract_answer(response: str) -> str | None:
     return match.group(1) if match else None
 
 
-def build_examples(data_path: Path, attack_dir: Path, limit: int | None) -> list[JsonDict]:
+def build_examples(
+    data_path: Path, attack_dir: Path, limit: int | None
+) -> list[JsonDict]:
     math_rows = {}
     with data_path.open(encoding="utf-8") as handle:
         for index, line in enumerate(handle):
@@ -181,7 +195,9 @@ def build_examples(data_path: Path, attack_dir: Path, limit: int | None) -> list
     return examples
 
 
-def generate_samples(args: argparse.Namespace, examples: list[JsonDict]) -> list[JsonDict]:
+def generate_samples(
+    args: argparse.Namespace, examples: list[JsonDict]
+) -> list[JsonDict]:
     model_kwargs: JsonDict = {
         "model": args.model_name_or_path,
         "dtype": "auto",
@@ -238,9 +254,9 @@ def grade_samples(args: argparse.Namespace, samples: list[JsonDict]) -> None:
         model=args.checker_model,
         dtype="auto",
         trust_remote_code=True,
-        gpu_memory_utilization=args.gpu_memory_utilization,
+        gpu_memory_utilization=args.checker_gpu_memory_utilization,
         tensor_parallel_size=args.tensor_parallel_size,
-        max_model_len=args.max_model_len,
+        max_model_len=args.checker_max_model_len,
     )
     params = SamplingParams(max_tokens=8, temperature=0, seed=args.seed)
 
@@ -301,6 +317,11 @@ def summarize(
         "attack_result_dir": str(attack_dir),
         "checker_model": args.checker_model,
         "checker": "simple-evals equality prompt",
+        "checker_config": {
+            "gpu_memory_utilization": args.checker_gpu_memory_utilization,
+            "max_model_len": args.checker_max_model_len,
+            "tensor_parallel_size": args.tensor_parallel_size,
+        },
         "num_examples": len({row["index"] for row in samples}),
         "n_repeats": args.n_repeats,
         "accuracy": average([float(row["score"]) for row in samples]),
@@ -350,9 +371,10 @@ def main() -> None:
 
     split = "train" if args.split == "math_train" else "test"
     data_path = args.dataset_path or Path("dataset/math") / f"{split}.jsonl"
-    attack_dir = args.attack_result_dir or Path(
-        "res/dpo"
-    ) / f"qwen3-0.6b_{args.split}_multi_prompt_gcg_b200_s23"
+    attack_dir = (
+        args.attack_result_dir
+        or Path("res/dpo") / f"qwen3-0.6b_{args.split}_multi_prompt_gcg_b200_s23"
+    )
 
     examples = build_examples(data_path, attack_dir, args.limit)
     samples = generate_samples(args, examples)
