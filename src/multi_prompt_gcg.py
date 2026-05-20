@@ -29,7 +29,11 @@ from utils import (
     read_data,
     sample_control,
 )
-from utils.string_utils import _vllm_prompt_request, _vllm_sampling_params
+from utils.string_utils import (
+    _vllm_prompt_request,
+    _vllm_sampling_params,
+    get_chat_prompt,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -174,15 +178,32 @@ def initialize_group(
     ]
 
     runtime.activate_vllm()
-    baseline = generate_batch(runtime, [state.prompt for state in states], n=1)
-    initial = generate_batch(runtime, [state.adv_prompt for state in states], n=1)
-
-    for state, baseline_result, initial_result in zip(states, baseline, initial):
-        state.suffix_manager.update(answer=initial_result["answer"])
-        state.results[-1] = initial_record(state, baseline_result, initial_result)
-        save_state(save_dir, state)
+    baseline = generate_batch(
+        runtime,
+        [state.prompt for state in states],
+        n=args.sample_times,
+    )
+    initial = generate_batch(
+        runtime,
+        [state.adv_prompt for state in states],
+        n=args.sample_times,
+    )
 
     runtime.activate_hf()
+    annotate_baseline_success(args, runtime, states, baseline)
+    annotate_success(args, runtime, states, initial, first_success_step=None)
+    group_success_rate = get_group_success_rate(initial)
+    ever_group_success_rate = get_ever_group_success_rate(states)
+    for state, baseline_result, initial_result in zip(states, baseline, initial):
+        state.results[-1] = initial_record(
+            state,
+            baseline_result,
+            initial_result,
+            group_success_rate,
+            ever_group_success_rate,
+        )
+        save_state(save_dir, state)
+
     return states
 
 
@@ -416,7 +437,7 @@ def annotate_success(
     runtime: ColocatedRuntime,
     states: list[PromptState],
     evaluations: list[dict[str, Any]],
-    step: int,
+    first_success_step: int | None,
 ) -> None:
     for state, evaluation in zip(states, evaluations):
         state.suffix_manager.update(answer=evaluation["answer"])
@@ -425,11 +446,48 @@ def annotate_success(
         if output_cap_hit:
             input_ids = state.suffix_manager.get_input_ids().to(runtime.device).unsqueeze(0)
             entropy_low = is_entropy_low(runtime.model, input_ids)
-        success = output_cap_hit and entropy_low
-        evaluation["entropy_low"] = entropy_low
-        evaluation["success"] = success
-        if success and state.first_success_step is None:
-            state.first_success_step = step
+        success = set_success_fields(args, evaluation, entropy_low)
+        if (
+            success
+            and first_success_step is not None
+            and state.first_success_step is None
+        ):
+            state.first_success_step = first_success_step
+
+
+def set_success_fields(
+    args: argparse.Namespace,
+    evaluation: dict[str, Any],
+    entropy_low: bool,
+) -> bool:
+    success = (
+        evaluation["success_rate"] >= args.prompt_success_rate_threshold
+        and entropy_low
+    )
+    evaluation["entropy_low"] = entropy_low
+    evaluation["success"] = success
+    return success
+
+
+def annotate_baseline_success(
+    args: argparse.Namespace,
+    runtime: ColocatedRuntime,
+    states: list[PromptState],
+    evaluations: list[dict[str, Any]],
+) -> None:
+    for state, evaluation in zip(states, evaluations):
+        output_cap_hit = evaluation["success_rate"] >= args.prompt_success_rate_threshold
+        entropy_low = False
+        if output_cap_hit:
+            input_ids = get_chat_prompt(
+                runtime.tokenizer,
+                state.prompt,
+                assistant_content=evaluation["answer"],
+                return_tensors="pt",
+            )[0]
+            input_ids = input_ids.to(runtime.device).unsqueeze(0)
+            entropy_low = is_entropy_low(runtime.model, input_ids)
+        set_success_fields(args, evaluation, entropy_low)
 
 
 def get_group_success_rate(evaluations: list[dict[str, Any]]) -> float:
@@ -446,24 +504,31 @@ def initial_record(
     state: PromptState,
     baseline_result: dict[str, Any],
     initial_result: dict[str, Any],
+    group_success_rate: float,
+    ever_group_success_rate: float,
 ) -> dict[str, Any]:
     return {
         "baseline_prompt": state.prompt,
         "baseline_answer": baseline_result["answer"],
         "baseline_output_len": baseline_result["avg_len"],
+        "baseline_success_rate": baseline_result["success_rate"],
+        "baseline_success": baseline_result["success"],
+        "baseline_entropy_low": baseline_result["entropy_low"],
         "prompt": state.adv_prompt,
         "answer": initial_result["answer"],
         "output_len": initial_result["avg_len"],
+        "success_rate": initial_result["success_rate"],
+        "avg_len": initial_result["avg_len"],
         "adv_suffix": state.suffix_manager.adv_suffix,
         "adv_prompt": state.adv_prompt,
         "group_id": state.group_id,
         "group_size": state.group_size,
-        "group_success_rate": 0.0,
-        "ever_group_success_rate": 0.0,
+        "group_success_rate": group_success_rate,
+        "ever_group_success_rate": ever_group_success_rate,
         "group_current_loss": 0.0,
         "evaluated": True,
-        "success": False,
-        "entropy_low": False,
+        "success": initial_result["success"],
+        "entropy_low": initial_result["entropy_low"],
         "first_success_step": state.first_success_step,
         "time": 0.0,
     }
