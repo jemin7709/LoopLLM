@@ -214,6 +214,10 @@ def make_dpo_config(args: argparse.Namespace) -> DPOConfig:
         eval_strategy="steps",
         eval_steps=args.eval_steps,
         save_steps=args.save_steps,
+        save_strategy="steps",
+        load_best_model_at_end=True,
+        metric_for_best_model="eval_loss",
+        greater_is_better=False,
         save_total_limit=args.save_total_limit,
         seed=args.seed,
         bf16=not args.fp16,
@@ -284,7 +288,7 @@ def main() -> None:
         peft_config=peft_config,
     )
     trainer.train()
-    trainer.save_model()
+    trainer.save_model(str(args.output_dir / "checkpoint-best"))
 
 
 if __name__ == "__main__":
