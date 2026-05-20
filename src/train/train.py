@@ -27,6 +27,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--model_name_or_path", default="Qwen/Qwen3-0.6B")
     parser.add_argument("--train_result_dir", type=Path, default=DEFAULT_TRAIN_DIR)
+    parser.add_argument("--dataset_dir", type=Path)
     parser.add_argument(
         "--output_dir", type=Path, default=Path("outputs/qwen3-0.6b-dpo-lora")
     )
@@ -136,6 +137,17 @@ def save_jsonl(dataset: Dataset, path: Path) -> None:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
+def load_jsonl_dataset(path: Path) -> Dataset:
+    rows = []
+    with path.open(encoding="utf-8") as f:
+        for line in f:
+            if line.strip():
+                rows.append(json.loads(line))
+    if not rows:
+        raise SystemExit(f"No DPO rows found in {path}")
+    return Dataset.from_list(rows)
+
+
 def save_metadata(
     args: argparse.Namespace,
     source_stats: dict[str, int],
@@ -147,6 +159,7 @@ def save_metadata(
         "model_name_or_path": args.model_name_or_path,
         "data": {
             "train_result_dir": str(args.train_result_dir),
+            "dataset_dir": str(args.dataset_dir) if args.dataset_dir else None,
             "save_dataset_dir": str(args.save_dataset_dir)
             if args.save_dataset_dir
             else None,
@@ -235,17 +248,25 @@ def make_dpo_config(args: argparse.Namespace) -> DPOConfig:
 def main() -> None:
     args = parse_args()
 
-    rows, source_stats = load_preference_rows(
-        args.train_result_dir,
-        args.max_train_samples,
-        args.success_only,
-    )
-    split = Dataset.from_list(rows).train_test_split(
-        test_size=args.validation_ratio,
-        seed=args.seed,
-    )
-    train_dataset = split["train"]
-    validation_dataset = split["test"]
+    if args.dataset_dir is not None:
+        train_dataset = load_jsonl_dataset(args.dataset_dir / "train.jsonl")
+        validation_dataset = load_jsonl_dataset(args.dataset_dir / "validation.jsonl")
+        source_stats = {
+            "train_rows": len(train_dataset),
+            "validation_rows": len(validation_dataset),
+        }
+    else:
+        rows, source_stats = load_preference_rows(
+            args.train_result_dir,
+            args.max_train_samples,
+            args.success_only,
+        )
+        split = Dataset.from_list(rows).train_test_split(
+            test_size=args.validation_ratio,
+            seed=args.seed,
+        )
+        train_dataset = split["train"]
+        validation_dataset = split["test"]
     train_stats = {"pairs": len(train_dataset)}
     validation_stats = {"pairs": len(validation_dataset)}
 
